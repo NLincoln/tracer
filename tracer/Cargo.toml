@@ -7,3 +7,5 @@ edition = "2018"
 [dependencies]
 libtrace = { path = "../libtrace" }
 rand = "0.5"
+rayon = "1.0"
+
