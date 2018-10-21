@@ -29,13 +29,17 @@ impl Ray {
     return self.origin.clone() + self.direction.clone().scalar_mult(t);
   }
 
-  pub fn intersects_sphere(&self, sphere: &Sphere) -> bool {
+  pub fn intersects_sphere(&self, sphere: &Sphere) -> Option<f32> {
     let oc = self.origin().clone() - sphere.center().clone();
     let a = self.direction().length();
     let b = 2.0 * oc.clone().dot(self.direction());
     let c = oc.length() - sphere.radius() * sphere.radius();
     let discriminant = b * b - 4. * a * c;
-    return discriminant > 0.;
+    if discriminant < 0. {
+      return None;
+    } else {
+      return Some((-b - discriminant.sqrt()) / (2.0 * a));
+    }
   }
 }
 

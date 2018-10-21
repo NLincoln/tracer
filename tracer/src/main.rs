@@ -3,14 +3,20 @@ use self::vec3::Vec3;
 use libtrace::{ppm, ray, sphere, vec3};
 
 fn color(ray: &ray::Ray) -> Vec3 {
-  if ray.intersects_sphere(&sphere::Sphere::new(0.5, Vec3::new(0., 0., -1.))) {
-    return Vec3::new(1., 0., 0.);
-  }
-  let mut unit_direction = ray.direction().clone();
-  unit_direction.normalize();
-  let t: f32 = 0.5 * (unit_direction.y() + 1.0);
+  match ray.intersects_sphere(&sphere::Sphere::new(0.5, Vec3::new(0., 0., -1.))) {
+    Some(t) => {
+      let mut n: Vec3 = ray.point_at(t) - Vec3::new(0., 0., -1.);
+      n.normalize();
+      Vec3::new(n.x() + 1., n.y() + 1., n.z() + 1.).scalar_mult(0.5)
+    }
+    None => {
+      let mut unit_direction = ray.direction().clone();
+      unit_direction.normalize();
+      let t: f32 = 0.5 * (unit_direction.y() + 1.0);
 
-  return Vec3::new(1.0, 1.0, 1.0).scalar_mult(1.0 - t) + Vec3::new(0.5, 0.7, 1.0).scalar_mult(t);
+      Vec3::new(1.0, 1.0, 1.0).scalar_mult(1.0 - t) + Vec3::new(0.5, 0.7, 1.0).scalar_mult(t)
+    }
+  }
 }
 
 fn main() {
