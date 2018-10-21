@@ -136,6 +136,28 @@ impl Add for Vec3 {
   }
 }
 
+impl<'a> Add<&'a Vec3> for Vec3 {
+  type Output = Vec3;
+  #[inline]
+  fn add(mut self, other: &'a Vec3) -> Vec3 {
+    *self.mut_x() += other.x();
+    *self.mut_y() += other.y();
+    *self.mut_z() += other.z();
+    self
+  }
+}
+
+impl Add<f32> for Vec3 {
+  type Output = Vec3;
+  #[inline]
+  fn add(mut self, other: f32) -> Vec3 {
+    *self.mut_x() += other;
+    *self.mut_y() += other;
+    *self.mut_z() += other;
+    self
+  }
+}
+
 impl AddAssign for Vec3 {
   #[inline]
   fn add_assign(&mut self, rhs: Vec3) {
@@ -184,10 +206,31 @@ impl MulAssign for Vec3 {
   }
 }
 
+impl Mul<f32> for Vec3 {
+  type Output = Vec3;
+  #[inline]
+  fn mul(mut self, other: f32) -> Vec3 {
+    *self.mut_x() *= other;
+    *self.mut_y() *= other;
+    *self.mut_z() *= other;
+    self
+  }
+}
+
 impl Div for Vec3 {
   type Output = Vec3;
   fn div(self, rhs: Vec3) -> Vec3 {
     Vec3::new(self.x() / rhs.x(), self.y() / rhs.y(), self.z() / rhs.z())
+  }
+}
+
+impl Div<f32> for Vec3 {
+  type Output = Vec3;
+  fn div(mut self, rhs: f32) -> Vec3 {
+    *self.mut_x() /= rhs;
+    *self.mut_y() /= rhs;
+    *self.mut_z() /= rhs;
+    self
   }
 }
 
