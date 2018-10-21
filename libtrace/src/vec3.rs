@@ -1,7 +1,7 @@
 use std::fmt::{self, Debug};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct Vec3([f32; 3]);
 
 impl Debug for Vec3 {
@@ -79,6 +79,17 @@ impl Vec3 {
   pub fn scalar_mult(mut self, val: f32) -> Vec3 {
     self.scalar_mult_mut(val);
     return self;
+  }
+
+  pub fn scalar_div_mut(&mut self, val: f32) {
+    *self.mut_x() /= val;
+    *self.mut_y() /= val;
+    *self.mut_z() /= val;
+  }
+
+  pub fn scalar_div(mut self, val: f32) -> Vec3 {
+    self.scalar_div_mut(val);
+    self
   }
 
   /// Returns the x component of the vector (or i-hat, or <1, 0, 0>)
@@ -185,6 +196,12 @@ impl DivAssign for Vec3 {
     *self.mut_x() /= rhs.x();
     *self.mut_y() /= rhs.y();
     *self.mut_z() /= rhs.z();
+  }
+}
+
+impl From<(f32, f32, f32)> for Vec3 {
+  fn from(triple: (f32, f32, f32)) -> Vec3 {
+    Vec3::new(triple.0, triple.1, triple.2)
   }
 }
 

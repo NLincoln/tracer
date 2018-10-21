@@ -1,4 +1,10 @@
+mod hitable;
 pub mod ppm;
-pub mod ray;
-pub mod sphere;
-pub mod vec3;
+mod ray;
+mod sphere;
+mod vec3;
+
+pub use self::hitable::{HitRecord, Hitable};
+pub use self::ray::Ray;
+pub use self::sphere::Sphere;
+pub use self::vec3::Vec3;

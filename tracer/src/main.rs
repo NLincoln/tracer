@@ -1,14 +1,13 @@
 extern crate libtrace;
-use self::vec3::Vec3;
-use libtrace::{ppm, ray, sphere, vec3};
+use libtrace::{ppm, Hitable, Ray, Sphere, Vec3};
 
-fn color(ray: &ray::Ray) -> Vec3 {
-  match ray.intersects_sphere(&sphere::Sphere::new(0.5, Vec3::new(0., 0., -1.))) {
-    Some(t) => {
-      let mut n: Vec3 = ray.point_at(t) - Vec3::new(0., 0., -1.);
-      n.normalize();
-      Vec3::new(n.x() + 1., n.y() + 1., n.z() + 1.).scalar_mult(0.5)
-    }
+fn color(ray: &Ray, world: impl Hitable) -> Vec3 {
+  match world.hit(ray, 0.0, std::f32::MAX) {
+    Some(hit_record) => Vec3::new(
+      hit_record.normal.x() + 1.,
+      hit_record.normal.y() + 1.,
+      hit_record.normal.z() + 1.,
+    ).scalar_mult(0.5),
     None => {
       let mut unit_direction = ray.direction().clone();
       unit_direction.normalize();
@@ -20,8 +19,8 @@ fn color(ray: &ray::Ray) -> Vec3 {
 }
 
 fn main() {
-  let nx = 200;
-  let ny = 100;
+  let nx = 400;
+  let ny = 200;
 
   print!("P3\n{} {}\n255\n", nx, ny);
 
@@ -30,18 +29,23 @@ fn main() {
   let vertical = Vec3::new(0.0, 2.0, 0.0);
   let origin = Vec3::new(0.0, 0.0, 0.0);
 
+  let world: Vec<Box<dyn Hitable>> = vec![
+    Box::new(Sphere::new(0.5, Vec3::new(0., 0., -1.))),
+    Box::new(Sphere::new(100., Vec3::new(0., -100.5, -1.))),
+  ];
+
   for j in 0..ny {
-    let j = ny - j;
+    let j = ny - 1 - j;
     for i in 0..nx {
       let u = i as f32 / nx as f32;
       let v = j as f32 / ny as f32;
-      let r = ray::Ray::new(
+      let r = Ray::new(
         origin.clone(),
         lower_left_corner.clone()
           + horizontal.clone().scalar_mult(u)
           + vertical.clone().scalar_mult(v),
       );
-      let col = color(&r);
+      let col = color(&r, &world[..]);
 
       println!("{}", ppm::format_as_color(&col));
     }
