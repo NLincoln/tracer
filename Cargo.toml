@@ -1,7 +1,2 @@
-[package]
-name = "raytrace"
-version = "0.1.0"
-authors = ["Nathan <nlincoln@intellifarms.com>"]
-edition = "2018"
-
-[dependencies]
+[workspace]
+members = ["libtrace", "tracer"]

@@ -1,6 +1,7 @@
 use std::fmt::{self, Debug};
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign};
-#[derive(PartialEq)]
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+
+#[derive(PartialEq, Clone)]
 pub struct Vec3([f32; 3]);
 
 impl Debug for Vec3 {
@@ -38,9 +39,7 @@ impl Vec3 {
     return self.squared_length().sqrt();
   }
   pub fn squared_length(&self) -> f32 {
-    let buf = &self.0;
-
-    return buf[0] * buf[0] + buf[1] * buf[1] + buf[2] * buf[2];
+    return self.clone().dot(self);
   }
 
   /// Mutates the underlying vector and normalizes it, which means it
@@ -53,11 +52,14 @@ impl Vec3 {
   /// therefore leaving the choice to the user would be best.
   ///
   /// ```
-  /// use raytrace::vec3::Vec3;
+  /// use libtrace::vec3::Vec3;
   ///
   /// let mut vec = Vec3::new(2., 3., 10.);
   /// vec.normalize();
-  /// assert_eq!(vec.length(), 1);
+  /// let len = vec.length();
+  ///
+  /// assert!(len > 0.99999);
+  /// assert!(len < 1.00001);
   /// ```
   ///
   pub fn normalize(&mut self) {
@@ -65,6 +67,18 @@ impl Vec3 {
     *self.mut_x() /= len;
     *self.mut_y() /= len;
     *self.mut_z() /= len;
+  }
+
+  /// Multipy the contents of this vector by a scalar value
+  pub fn scalar_mult_mut(&mut self, val: f32) {
+    *self.mut_x() *= val;
+    *self.mut_y() *= val;
+    *self.mut_z() *= val;
+  }
+
+  pub fn scalar_mult(mut self, val: f32) -> Vec3 {
+    self.scalar_mult_mut(val);
+    return self;
   }
 
   /// Returns the x component of the vector (or i-hat, or <1, 0, 0>)
@@ -87,6 +101,13 @@ impl Vec3 {
   pub fn mut_z(&mut self) -> &mut f32 {
     &mut self.0[2]
   }
+
+  pub fn dot(mut self, other: &Vec3) -> f32 {
+    *self.mut_x() *= other.x();
+    *self.mut_y() *= other.y();
+    *self.mut_z() *= other.z();
+    self.x() + self.y() + self.z()
+  }
 }
 
 impl Default for Vec3 {
@@ -98,12 +119,9 @@ impl Default for Vec3 {
 impl Add for Vec3 {
   type Output = Vec3;
   #[inline]
-  fn add(self, other: Vec3) -> Vec3 {
-    Vec3::new(
-      self.x() + other.x(),
-      self.y() + other.y(),
-      self.z() + other.z(),
-    )
+  fn add(mut self, other: Vec3) -> Vec3 {
+    self += other;
+    self
   }
 }
 
@@ -113,6 +131,24 @@ impl AddAssign for Vec3 {
     *self.mut_x() += rhs.x();
     *self.mut_y() += rhs.y();
     *self.mut_z() += rhs.z();
+  }
+}
+
+impl Sub for Vec3 {
+  type Output = Vec3;
+  #[inline]
+  fn sub(mut self, other: Vec3) -> Vec3 {
+    self -= other;
+    self
+  }
+}
+
+impl SubAssign for Vec3 {
+  #[inline]
+  fn sub_assign(&mut self, rhs: Vec3) {
+    *self.mut_x() -= rhs.x();
+    *self.mut_y() -= rhs.y();
+    *self.mut_z() -= rhs.z();
   }
 }
 

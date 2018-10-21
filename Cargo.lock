@@ -1,4 +1,11 @@
 [[package]]
-name = "raytrace"
+name = "libtrace"
 version = "0.1.0"
+
+[[package]]
+name = "tracer"
+version = "0.1.0"
+dependencies = [
+ "libtrace 0.1.0",
+]
 
