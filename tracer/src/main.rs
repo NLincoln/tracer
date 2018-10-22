@@ -1,10 +1,15 @@
+extern crate clap;
 extern crate libtrace;
 extern crate rand;
 extern crate rayon;
+
 use libtrace::{ppm, Camera, Hitable, Ray, Sphere, Vec3};
 use rand::prelude::*;
 use rayon::prelude::*;
-use std::time::{Duration, Instant};
+use std::fmt::Write;
+use std::fs;
+use std::io;
+use std::time::Instant;
 
 fn color(ray: &Ray, world: impl Hitable) -> Vec3 {
   match world.hit(ray, 0.0, std::f32::MAX) {
@@ -23,14 +28,23 @@ fn color(ray: &Ray, world: impl Hitable) -> Vec3 {
   }
 }
 
-fn main() {
+fn main() -> io::Result<()> {
+  let matches = clap::App::new("Tracer")
+    .version("0.1.0")
+    .about("Ray traces an image")
+    .arg(
+      clap::Arg::with_name("output")
+        .short("o")
+        .value_name("FILE")
+        .takes_value(true)
+        .default_value("image.ppm"),
+    ).get_matches();
+
   let start = Instant::now();
 
   let width = 800;
   let height = 400;
   let num_samples = 100;
-
-  print!("P3\n{} {}\n255\n", width, height);
 
   let world: Vec<Box<dyn Hitable + Sync>> = vec![
     Box::new(Sphere::new(0.5, Vec3::new(0., 0., -1.))),
@@ -67,7 +81,14 @@ fn main() {
     "Took {}s",
     duration.as_secs() as f64 + duration.subsec_millis() as f64 * 1e-3
   );
+  let mut buf = String::new();
+  write!(buf, "P3\n{} {}\n255\n", width, height);
+
   for pixel in result_image {
-    println!("{}", ppm::format_as_color(&pixel));
+    writeln!(buf, "{}", ppm::format_as_color(&pixel));
   }
+
+  fs::write(matches.value_of("output").unwrap(), buf)?;
+
+  Ok(())
 }
