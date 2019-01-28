@@ -1,4 +1,5 @@
 use std::fmt::{self, Debug};
+use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(PartialEq, Clone, Copy)]
@@ -69,6 +70,10 @@ impl Vec3 {
     *self.mut_z() /= len;
   }
 
+  pub fn into_normalized(self) -> Vec3 {
+    self / self.length()
+  }
+
   /// Multipy the contents of this vector by a scalar value
   pub fn scalar_mult_mut(&mut self, val: f32) {
     *self.mut_x() *= val;
@@ -127,22 +132,20 @@ impl Default for Vec3 {
   }
 }
 
+impl Sum for Vec3 {
+  fn sum<I>(iter: I) -> Self
+  where
+    I: Iterator<Item = Vec3>,
+  {
+    iter.fold(Vec3::default(), |acc, curr| acc + curr)
+  }
+}
+
 impl Add for Vec3 {
   type Output = Vec3;
   #[inline]
   fn add(mut self, other: Vec3) -> Vec3 {
     self += other;
-    self
-  }
-}
-
-impl<'a> Add<&'a Vec3> for Vec3 {
-  type Output = Vec3;
-  #[inline]
-  fn add(mut self, other: &'a Vec3) -> Vec3 {
-    *self.mut_x() += other.x();
-    *self.mut_y() += other.y();
-    *self.mut_z() += other.z();
     self
   }
 }

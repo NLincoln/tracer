@@ -9,3 +9,4 @@ libtrace = { path = "../libtrace" }
 rand = "0.5"
 rayon = "1.0"
 clap = "2.32"
+png = "0.14"
