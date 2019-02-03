@@ -14,6 +14,7 @@ use rayon::prelude::*;
 use std::error::Error;
 use std::io::Write;
 
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs;
 use std::time::Instant;
 
@@ -179,6 +180,13 @@ fn main() -> Result<(), Box<dyn Error>> {
       pixels.push((i, j));
     }
   }
+
+  let bar = ProgressBar::new(pixels.len() as u64);
+  bar.set_style(
+    ProgressStyle::default_bar()
+      .template("[{elapsed} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]"),
+  );
+
   let result_image: Vec<_> = pixels
     .into_par_iter()
     .map(|(i, j)| {
@@ -201,9 +209,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         samples.push(color(&r, world, 0));
       }
       let col: Vec3 = samples.into_iter().sum();
-      col / num_samples as f32
+      let color = col / num_samples as f32;
+      bar.inc(1);
+      return color;
     })
     .collect();
+
+  bar.finish();
   let duration = start.elapsed();
 
   eprintln!(
