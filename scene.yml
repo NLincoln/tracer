@@ -1,0 +1,10 @@
+image:
+  height: 200
+  width: 400
+  samples: 50
+
+camera:
+  look_from: [13, 2, 3]
+  look_at: [0, 0, 0]
+  aperture: 0.05
+  fov: 20

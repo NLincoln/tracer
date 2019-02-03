@@ -1,8 +1,9 @@
+use serde::Deserialize;
 use std::fmt::{self, Debug};
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Deserialize)]
 pub struct Vec3([f32; 3]);
 
 impl Debug for Vec3 {

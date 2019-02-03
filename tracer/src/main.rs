@@ -1,7 +1,4 @@
-extern crate clap;
-extern crate libtrace;
-extern crate rand;
-extern crate rayon;
+mod config;
 use std::f32;
 
 use libtrace::{
@@ -12,9 +9,10 @@ use libtrace::{
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 
 use indicatif::{ProgressBar, ProgressStyle};
+use png::HasParameters;
 use std::fs;
 use std::time::Instant;
 
@@ -145,35 +143,42 @@ fn main() -> Result<(), Box<dyn Error>> {
         .short("o")
         .value_name("FILE")
         .takes_value(true)
-        .default_value("image.ppm"),
+        .default_value("image.png"),
+    )
+    .arg(
+      clap::Arg::with_name("input")
+        .short("i")
+        .value_name("FILE")
+        .takes_value(true)
+        .default_value("scene.yml"),
     )
     .get_matches();
 
   let start = Instant::now();
 
-  let width = 800;
-  let height = 400;
-  let num_samples = 50;
+  let config: config::Config =
+    serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
+
+  let width = config.image.width;
+  let height = config.image.height;
+  let num_samples = config.image.samples;
 
   let world = random_scene();
   let world = world.as_slice();
 
-  let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-  let lookat = Vec3::new(0.0, 0.0, 0.0);
-  let dist_to_focus = (lookfrom - lookat).length();
-  let aperture = 0.05;
+  let dist_to_focus = (config.camera.look_from - config.camera.look_at).length();
 
   let camera = Camera::new(
-    lookfrom,
-    lookat,
+    config.camera.look_from,
+    config.camera.look_at,
     Vec3::new(0.0, 1.0, 0.0),
-    20.0,
+    config.camera.fov,
     (width as f32) / (height as f32),
-    aperture,
+    config.camera.aperture,
     dist_to_focus,
   );
 
-  let mut pixels = Vec::with_capacity(height * width);
+  let mut pixels = Vec::with_capacity((height * width) as usize);
   for j in 0..height {
     let j = height - 1 - j;
     for i in 0..width {
@@ -182,10 +187,10 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   let bar = ProgressBar::new(pixels.len() as u64);
-  bar.set_style(
-    ProgressStyle::default_bar()
-      .template("[{elapsed} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]"),
-  );
+  bar
+    .set_style(ProgressStyle::default_bar().template(
+      "[{elapsed_precise} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]",
+    ));
 
   let result_image: Vec<_> = pixels
     .into_par_iter()
@@ -197,7 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
       let mut rng = rand::thread_rng();
       let mut samples = Vec::new();
-      samples.reserve(num_samples);
+      samples.reserve(num_samples as usize);
       for _ in 0..num_samples {
         // U and V are the actual coordinates on the
         // image plane we are targeting.
@@ -222,17 +227,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     "Took {}s",
     duration.as_secs() as f64 + duration.subsec_millis() as f64 * 1e-3
   );
-  let mut output = fs::OpenOptions::new()
+  let output = fs::OpenOptions::new()
     .create(true)
     .write(true)
     .truncate(true)
     .open(matches.value_of("output").unwrap())?;
 
-  write!(output, "P3\n{} {}\n255\n", width, height)?;
+  let writer = BufWriter::new(output);
+  let mut encoder = png::Encoder::new(writer, width, height);
+  encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
+  let mut writer = encoder.write_header()?;
+  let mut image_data = Vec::with_capacity(result_image.len() * 4);
 
   for pixel in result_image {
-    writeln!(output, "{}", ppm::format_as_color(&pixel))?;
+    let color = ppm::to_color(&pixel);
+    image_data.push(color.0);
+    image_data.push(color.1);
+    image_data.push(color.2);
+    image_data.push(255);
   }
+
+  writer.write_image_data(&image_data)?;
 
   Ok(())
 }
