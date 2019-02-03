@@ -1,10 +1,11 @@
-use crate::{Ray, Vec3};
+use crate::{Material, Ray, Vec3};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct HitRecord {
   pub t: f32,
-  pub p: Vec3,
+  pub pointing_at: Vec3,
   pub normal: Vec3,
+  pub material: Material,
 }
 
 pub trait Hitable {

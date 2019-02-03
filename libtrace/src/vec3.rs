@@ -15,6 +15,17 @@ impl Vec3 {
   pub fn new(x: f32, y: f32, z: f32) -> Vec3 {
     Vec3([x, y, z])
   }
+  /// Creates a random vector
+  pub fn random_in_unit_circle() -> Vec3 {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    loop {
+      let vec = Vec3::new(rng.gen(), rng.gen(), rng.gen()) * 2. - Vec3::new(1., 1., 1.);
+      if vec.squared_length() <= 1. {
+        return vec;
+      }
+    }
+  }
   /// Creates a vector from an array slice
   ///
   /// Returns `None` with the following conditions when provided a slice with anything
@@ -53,7 +64,7 @@ impl Vec3 {
   /// therefore leaving the choice to the user would be best.
   ///
   /// ```
-  /// use libtrace::vec3::Vec3;
+  /// use libtrace::Vec3;
   ///
   /// let mut vec = Vec3::new(2., 3., 10.);
   /// vec.normalize();

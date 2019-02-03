@@ -1,7 +1,7 @@
 use crate::vec3::Vec3;
 
 pub fn format_as_color(vec: &Vec3) -> String {
-  let transform = |color: f32| (color * 255.99) as u8;
+  let transform = |color: f32| (color.sqrt() * 255.99) as u8;
   format!(
     "{} {} {}",
     transform(vec.x()),
@@ -15,6 +15,7 @@ mod tests {
   use super::*;
   #[test]
   fn test_format_color() {
-    assert_eq!(format_as_color(&Vec3::new(0., 0.5, 1.)), "0 127 255")
+    // 181 with gamma
+    assert_eq!(format_as_color(&Vec3::new(0., 0.5, 1.)), "0 181 255")
   }
 }

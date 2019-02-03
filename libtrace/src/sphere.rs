@@ -1,23 +1,19 @@
-use crate::{HitRecord, Hitable, Ray, Vec3};
+use crate::{HitRecord, Hitable, Material, Ray, Vec3};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug)]
 pub struct Sphere {
   center: Vec3,
   radius: f32,
-}
-
-impl Default for Sphere {
-  fn default() -> Sphere {
-    Sphere {
-      radius: 1.,
-      center: Vec3::default(),
-    }
-  }
+  material: Material,
 }
 
 impl Sphere {
-  pub fn new(radius: f32, center: Vec3) -> Sphere {
-    Sphere { radius, center }
+  pub fn new(radius: f32, center: Vec3, material: Material) -> Sphere {
+    Sphere {
+      radius,
+      center,
+      material,
+    }
   }
 
   pub fn radius(&self) -> f32 {
@@ -42,22 +38,24 @@ impl Hitable for Sphere {
     let discriminant = discriminant.sqrt();
     let temp = (-b - discriminant) / a;
     if temp < t_max && temp > t_min {
-      let p = ray.point_at(temp);
-      let normal = (p - *self.center()).scalar_div(self.radius);
+      let pointing_at = ray.point_at(temp);
+      let normal = (pointing_at - *self.center()).scalar_div(self.radius);
       let result = Some(HitRecord {
         t: temp,
-        p: p.clone(),
+        pointing_at,
         normal,
+        material: self.material.clone(),
       });
       return result;
     } else {
       let temp = (-b + discriminant) / a;
       if temp < t_max && temp > t_min {
-        let p = ray.point_at(temp);
+        let pointing_at = ray.point_at(temp);
         return Some(HitRecord {
           t: temp,
-          p: p.clone(),
-          normal: (p - *self.center()).scalar_div(self.radius),
+          pointing_at,
+          normal: (pointing_at - *self.center()).scalar_div(self.radius),
+          material: self.material.clone(),
         });
       }
     }

@@ -1,12 +1,14 @@
 mod camera;
 mod hitable;
+pub mod material;
 pub mod ppm;
 mod ray;
 mod sphere;
 mod vec3;
 
-pub use self::camera::Camera;
-pub use self::hitable::{HitRecord, Hitable};
-pub use self::ray::Ray;
-pub use self::sphere::Sphere;
-pub use self::vec3::Vec3;
+pub use camera::Camera;
+pub use hitable::{HitRecord, Hitable};
+pub use material::{Material, Scatter};
+pub use ray::Ray;
+pub use sphere::Sphere;
+pub use vec3::Vec3;

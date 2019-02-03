@@ -3,7 +3,11 @@ extern crate libtrace;
 extern crate rand;
 extern crate rayon;
 
-use libtrace::{ppm, Camera, Hitable, Ray, Sphere, Vec3};
+use libtrace::{
+  material::{Lambertian, Metal},
+  ppm, Camera, Hitable, Ray, Sphere, Vec3,
+};
+
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
@@ -19,14 +23,16 @@ fn lerp(start_value: Vec3, end_value: Vec3, t: f32) -> Vec3 {
   start_value * (1.0 - t) + end_value * t
 }
 
-fn color(ray: &Ray, world: impl Hitable) -> Vec3 {
-  match world.hit(ray, 0.0, std::f32::MAX) {
-    Some(hit_record) => Vec3::new(
-      hit_record.normal.x() + 1.,
-      hit_record.normal.y() + 1.,
-      hit_record.normal.z() + 1.,
-    )
-    .scalar_mult(0.5),
+fn color(ray: &Ray, world: impl Hitable, depth: i32) -> Vec3 {
+  match world.hit(ray, 0.001, std::f32::MAX) {
+    Some(hit_record) => {
+      if depth < 50 {
+        if let Some(scatter) = hit_record.material.scatter(ray, &hit_record) {
+          return scatter.attenuation * color(&scatter.scatter, world, depth + 1);
+        }
+      }
+      return Vec3::default();
+    }
     None => {
       /*
        * We didn't get a hit! This means that
@@ -70,8 +76,26 @@ fn main() -> Result<(), Box<dyn Error>> {
   let num_samples = 100;
 
   let world: &[Box<dyn Hitable + Sync>] = &[
-    Box::new(Sphere::new(0.5, Vec3::new(0., 0., -1.))),
-    Box::new(Sphere::new(100., Vec3::new(0., -100.5, -1.))),
+    Box::new(Sphere::new(
+      0.5,
+      Vec3::new(0., 0., -1.),
+      Lambertian::new(Vec3::new(0.8, 0.3, 0.3)).into(),
+    )),
+    Box::new(Sphere::new(
+      0.5,
+      Vec3::new(1., 0., -1.),
+      Metal::new(Vec3::new(0.8, 0.3, 0.3), 0.3).into(),
+    )),
+    Box::new(Sphere::new(
+      0.5,
+      Vec3::new(-1., 0., -1.),
+      Metal::new(Vec3::new(0.8, 0.3, 0.3), 0.8).into(),
+    )),
+    Box::new(Sphere::new(
+      100.,
+      Vec3::new(0., -100.5, -1.),
+      Lambertian::new(Vec3::new(0.8, 0.8, 0.0)).into(),
+    )),
   ];
   let camera = Camera::new();
 
@@ -102,7 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let u = (i + rng.gen::<f32>()) / width;
         let v = (j + rng.gen::<f32>()) / height;
         let r = camera.get_ray(u, v);
-        samples.push(color(&r, world));
+        samples.push(color(&r, world, 0));
       }
       let col: Vec3 = samples.into_iter().sum();
       col / num_samples as f32
