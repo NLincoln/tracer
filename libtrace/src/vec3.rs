@@ -135,6 +135,14 @@ impl Vec3 {
     *self.mut_z() *= other.z();
     self.x() + self.y() + self.z()
   }
+
+  pub fn cross(&self, other: &Vec3) -> Vec3 {
+    Vec3::new(
+      self.y() * other.z() - self.z() * other.y(),
+      self.z() * other.x() - self.x() * other.z(),
+      self.x() * other.y() - self.y() * other.x(),
+    )
+  }
 }
 
 impl Default for Vec3 {

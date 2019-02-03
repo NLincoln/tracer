@@ -2,6 +2,7 @@ extern crate clap;
 extern crate libtrace;
 extern crate rand;
 extern crate rayon;
+use std::f32;
 
 use libtrace::{
   material::{Dialectric, Lambertian, Metal},
@@ -56,6 +57,84 @@ fn color(ray: &Ray, world: impl Hitable, depth: i32) -> Vec3 {
   }
 }
 
+fn random_scene() -> Vec<Box<dyn Hitable + Sync>> {
+  let mut world: Vec<Box<dyn Hitable + Sync>> = Vec::new();
+  world.push(Box::new(Sphere::new(
+    1000.,
+    (0., -1000., 0.).into(),
+    Lambertian::new((0.5, 0.5, 0.5).into()).into(),
+  )));
+
+  let mut rng = rand::thread_rng();
+
+  for a in -11..=10 {
+    for b in -11..=10 {
+      let a = a as f32;
+      let b = b as f32;
+      let material_type: f32 = rng.gen();
+      let center = Vec3::new(a + 0.9 * rng.gen::<f32>(), 0.2, b + 0.9 * rng.gen::<f32>());
+      if (center - Vec3::new(4., 0.2, 0.)).length() > 0.9 {
+        if material_type < 0.8 {
+          world.push(Box::new(Sphere::new(
+            0.2,
+            center,
+            Lambertian::new(
+              (
+                rng.gen::<f32>() * rng.gen::<f32>(),
+                rng.gen::<f32>() * rng.gen::<f32>(),
+                rng.gen::<f32>() * rng.gen::<f32>(),
+              )
+                .into(),
+            )
+            .into(),
+          )))
+        } else if material_type < 0.95 {
+          world.push(Box::new(Sphere::new(
+            0.2,
+            center,
+            Metal::new(
+              (
+                0.5 * (1. + rng.gen::<f32>()),
+                0.5 * (1. + rng.gen::<f32>()),
+                0.5 * (1. + rng.gen::<f32>()),
+              )
+                .into(),
+              0.5 * rng.gen::<f32>(),
+            )
+            .into(),
+          )))
+        } else {
+          world.push(Box::new(Sphere::new(
+            0.2,
+            center,
+            Dialectric::new(1.5).into(),
+          )))
+        }
+      }
+    }
+  }
+
+  world.push(Box::new(Sphere::new(
+    1.0,
+    (0., 1., 0.).into(),
+    Dialectric::new(1.5).into(),
+  )));
+
+  world.push(Box::new(Sphere::new(
+    1.0,
+    (-4., 1., 0.).into(),
+    Lambertian::new((0.4, 0.2, 0.1).into()).into(),
+  )));
+
+  world.push(Box::new(Sphere::new(
+    1.0,
+    (4., 1., 0.).into(),
+    Metal::new((0.7, 0.6, 0.5).into(), 0.0).into(),
+  )));
+
+  world
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
   let matches = clap::App::new("Tracer")
     .version("0.1.0")
@@ -73,39 +152,27 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   let width = 800;
   let height = 400;
-  let num_samples = 100;
+  let num_samples = 50;
 
-  let world: &[Box<dyn Hitable + Sync>] = &[
-    Box::new(Sphere::new(
-      0.5,
-      (0., 0., -1.).into(),
-      Lambertian::new((0.1, 0.2, 0.5).into()).into(),
-    )),
-    Box::new(Sphere::new(
-      100.,
-      (0., -100.5, -1.).into(),
-      Lambertian::new((0.8, 0.8, 0.0).into()).into(),
-    )),
-    Box::new(Sphere::new(
-      0.5,
-      (1., 0., -1.).into(),
-      Metal::new((0.8, 0.6, 0.2).into(), 0.45).into(),
-    )),
-    Box::new(Sphere::new(
-      0.5,
-      (-1., 0., -1.).into(),
-      Dialectric::new(1.5).into(),
-    )),
-    Box::new(Sphere::new(
-      -0.45,
-      (-1., 0., -1.).into(),
-      Dialectric::new(1.5).into(),
-    )),
-  ];
-  let camera = Camera::new();
+  let world = random_scene();
+  let world = world.as_slice();
 
-  let mut pixels: Vec<(usize, usize)> = Vec::new();
-  pixels.reserve(height * width);
+  let lookfrom = Vec3::new(13.0, 2.0, 3.0);
+  let lookat = Vec3::new(0.0, 0.0, 0.0);
+  let dist_to_focus = (lookfrom - lookat).length();
+  let aperture = 0.05;
+
+  let camera = Camera::new(
+    lookfrom,
+    lookat,
+    Vec3::new(0.0, 1.0, 0.0),
+    20.0,
+    (width as f32) / (height as f32),
+    aperture,
+    dist_to_focus,
+  );
+
+  let mut pixels = Vec::with_capacity(height * width);
   for j in 0..height {
     let j = height - 1 - j;
     for i in 0..width {
