@@ -2,14 +2,14 @@ mod config;
 use std::f32;
 
 use libtrace::{
-  material::{Dialectric, Lambertian, Metal},
+  material::{Dialectric, Lambertian, Material, Metal},
   ppm, Camera, Hitable, Ray, Sphere, Vec3,
 };
 
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
-use std::io::{BufWriter, Write};
+use std::io::BufWriter;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use png::HasParameters;
@@ -72,44 +72,35 @@ fn random_scene() -> Vec<Box<dyn Hitable + Sync>> {
       let b = b as f32;
       let material_type: f32 = rng.gen();
       let center = Vec3::new(a + 0.9 * rng.gen::<f32>(), 0.2, b + 0.9 * rng.gen::<f32>());
-      if (center - Vec3::new(4., 0.2, 0.)).length() > 0.9 {
-        if material_type < 0.8 {
-          world.push(Box::new(Sphere::new(
-            0.2,
-            center,
-            Lambertian::new(
-              (
-                rng.gen::<f32>() * rng.gen::<f32>(),
-                rng.gen::<f32>() * rng.gen::<f32>(),
-                rng.gen::<f32>() * rng.gen::<f32>(),
-              )
-                .into(),
-            )
-            .into(),
-          )))
-        } else if material_type < 0.95 {
-          world.push(Box::new(Sphere::new(
-            0.2,
-            center,
-            Metal::new(
-              (
-                0.5 * (1. + rng.gen::<f32>()),
-                0.5 * (1. + rng.gen::<f32>()),
-                0.5 * (1. + rng.gen::<f32>()),
-              )
-                .into(),
-              0.5 * rng.gen::<f32>(),
-            )
-            .into(),
-          )))
-        } else {
-          world.push(Box::new(Sphere::new(
-            0.2,
-            center,
-            Dialectric::new(1.5).into(),
-          )))
-        }
+      if (center - Vec3::new(4., 0.2, 0.)).length() <= 0.9 {
+        continue;
       }
+      let material: Material = if material_type < 0.8 {
+        Lambertian::new(
+          (
+            rng.gen::<f32>() * rng.gen::<f32>(),
+            rng.gen::<f32>() * rng.gen::<f32>(),
+            rng.gen::<f32>() * rng.gen::<f32>(),
+          )
+            .into(),
+        )
+        .into()
+      } else if material_type < 0.95 {
+        Metal::new(
+          (
+            0.5 * (1. + rng.gen::<f32>()),
+            0.5 * (1. + rng.gen::<f32>()),
+            0.5 * (1. + rng.gen::<f32>()),
+          )
+            .into(),
+          0.5 * rng.gen::<f32>(),
+        )
+        .into()
+      } else {
+        Dialectric::new(1.5).into()
+      };
+
+      world.push(Box::new(Sphere::new(0.2, center, material)));
     }
   }
 
