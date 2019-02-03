@@ -4,7 +4,7 @@ extern crate rand;
 extern crate rayon;
 
 use libtrace::{
-  material::{Lambertian, Metal},
+  material::{Dialectric, Lambertian, Metal},
   ppm, Camera, Hitable, Ray, Sphere, Vec3,
 };
 
@@ -78,23 +78,28 @@ fn main() -> Result<(), Box<dyn Error>> {
   let world: &[Box<dyn Hitable + Sync>] = &[
     Box::new(Sphere::new(
       0.5,
-      Vec3::new(0., 0., -1.),
-      Lambertian::new(Vec3::new(0.8, 0.3, 0.3)).into(),
-    )),
-    Box::new(Sphere::new(
-      0.5,
-      Vec3::new(1., 0., -1.),
-      Metal::new(Vec3::new(0.8, 0.3, 0.3), 0.3).into(),
-    )),
-    Box::new(Sphere::new(
-      0.5,
-      Vec3::new(-1., 0., -1.),
-      Metal::new(Vec3::new(0.8, 0.3, 0.3), 0.8).into(),
+      (0., 0., -1.).into(),
+      Lambertian::new((0.1, 0.2, 0.5).into()).into(),
     )),
     Box::new(Sphere::new(
       100.,
-      Vec3::new(0., -100.5, -1.),
-      Lambertian::new(Vec3::new(0.8, 0.8, 0.0)).into(),
+      (0., -100.5, -1.).into(),
+      Lambertian::new((0.8, 0.8, 0.0).into()).into(),
+    )),
+    Box::new(Sphere::new(
+      0.5,
+      (1., 0., -1.).into(),
+      Metal::new((0.8, 0.6, 0.2).into(), 0.45).into(),
+    )),
+    Box::new(Sphere::new(
+      0.5,
+      (-1., 0., -1.).into(),
+      Dialectric::new(1.5).into(),
+    )),
+    Box::new(Sphere::new(
+      -0.45,
+      (-1., 0., -1.).into(),
+      Dialectric::new(1.5).into(),
     )),
   ];
   let camera = Camera::new();

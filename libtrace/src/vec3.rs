@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 use std::iter::Sum;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct Vec3([f32; 3]);
@@ -256,6 +256,12 @@ impl DivAssign for Vec3 {
   }
 }
 
+impl Neg for Vec3 {
+  type Output = Vec3;
+  fn neg(self) -> Vec3 {
+    return self * -1.;
+  }
+}
 impl From<(f32, f32, f32)> for Vec3 {
   fn from(triple: (f32, f32, f32)) -> Vec3 {
     Vec3::new(triple.0, triple.1, triple.2)
