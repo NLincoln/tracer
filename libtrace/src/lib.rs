@@ -3,6 +3,8 @@ mod hitable;
 pub mod material;
 pub mod ppm;
 mod ray;
+pub mod renderer;
+pub mod scene;
 mod sphere;
 mod vec3;
 
@@ -19,7 +21,6 @@ pub use vec3::Vec3;
 pub fn lerp(start_value: Vec3, end_value: Vec3, t: f32) -> Vec3 {
   start_value * (1.0 - t) + end_value * t
 }
-
 
 pub fn color(sky_color: &Vec3, ray: &Ray, world: &Hitable, depth: i32) -> Vec3 {
   match world.hit(ray, 0.001, std::f32::MAX) {

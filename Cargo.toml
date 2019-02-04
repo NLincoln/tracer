@@ -3,6 +3,5 @@ members = [
   "libtrace",
   "tracer",
   "coordinator",
-  "worker",
-  "worker-shared",
+  "worker"
 ]

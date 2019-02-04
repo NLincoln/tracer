@@ -2,18 +2,14 @@ use std::f32;
 
 use libtrace::{
   material::{Dialectric, Lambertian, Material, Metal},
-  ppm, Camera, Hitable, Sphere, Vec3,
+  Hitable, Sphere, Vec3,
 };
 
+use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
-use std::io::BufWriter;
-
-use indicatif::{ProgressBar, ProgressStyle};
-use png::HasParameters;
 use std::fs;
-use std::time::Instant;
 
 #[allow(dead_code)]
 fn random_scene() -> Hitable {
@@ -110,97 +106,54 @@ fn main() -> Result<(), Box<dyn Error>> {
     )
     .get_matches();
 
-  let start = Instant::now();
+  use libtrace::{renderer::Renderer, scene::Scene};
 
-  let config: worker_shared::Scene =
-    serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
+  struct WorkstationRenderer<'a> {
+    scene: &'a Scene,
+    progress_bar: &'a ProgressBar,
+  }
 
-  let width = config.image.width;
-  let height = config.image.height;
-  let num_samples = config.image.samples;
+  impl<'a> Renderer for WorkstationRenderer<'a> {
+    fn scene(&self) -> &Scene {
+      self.scene
+    }
+    fn on_pixel_rendered(&self, _location: (u32, u32), _color: (u8, u8, u8)) {
+      self.progress_bar.inc(1);
+    }
+    fn render(&self) -> Vec<(u8, u8, u8)> {
+      let scene = self.scene();
+      let camera = self.camera(&scene);
 
-  let dist_to_focus = (config.camera.look_from - config.camera.look_at).length();
-
-  let camera = Camera::new(
-    config.camera.look_from,
-    config.camera.look_at,
-    Vec3::new(0.0, 1.0, 0.0),
-    config.camera.fov,
-    (width as f32) / (height as f32),
-    config.camera.aperture,
-    dist_to_focus,
-  );
-
-  let mut pixels = Vec::with_capacity((height * width) as usize);
-  for j in 0..height {
-    let j = height - 1 - j;
-    for i in 0..width {
-      pixels.push((i, j));
+      self
+        .get_pixels_to_render(&scene)
+        .into_par_iter()
+        .map(|(i, j)| self.render_pixel(&camera, (i, j), &scene))
+        .collect()
     }
   }
 
-  let bar = ProgressBar::new(pixels.len() as u64);
+  let scene: Scene = serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
+  let num_pixels = scene.image.width * scene.image.height;
+  let bar = ProgressBar::new(num_pixels as u64);
+
   bar
     .set_style(ProgressStyle::default_bar().template(
       "[{elapsed_precise} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]",
     ));
 
-  let result_image: Vec<_> = pixels
-    .into_par_iter()
-    .map(|(i, j)| {
-      let width = width as f32;
-      let height = height as f32;
-      let i = i as f32;
-      let j = j as f32;
+  let renderer = WorkstationRenderer {
+    progress_bar: &bar,
+    scene: &scene,
+  };
 
-      let mut rng = rand::thread_rng();
-      let mut samples = Vec::new();
-      samples.reserve(num_samples as usize);
-      for _ in 0..num_samples {
-        // U and V are the actual coordinates on the
-        // image plane we are targeting.
-        // the rand adds a tiny bit of "wobble"
-        // to our sample, which is good for sampling
-        let u = (i + rng.gen::<f32>()) / width;
-        let v = (j + rng.gen::<f32>()) / height;
-        let r = camera.get_ray(u, v);
-        samples.push(libtrace::color(&config.sky_color, &r, &config.objects, 0));
-      }
-      let col: Vec3 = samples.into_iter().sum();
-      let color = col / num_samples as f32;
-      bar.inc(1);
-      return color;
-    })
-    .collect();
+  let pixels = renderer.render();
 
-  bar.finish();
-  let duration = start.elapsed();
-
-  eprintln!(
-    "Took {}s",
-    duration.as_secs() as f64 + duration.subsec_millis() as f64 * 1e-3
-  );
-  let output = fs::OpenOptions::new()
+  let mut output = fs::OpenOptions::new()
     .create(true)
     .write(true)
     .truncate(true)
     .open(matches.value_of("output").unwrap())?;
 
-  let writer = BufWriter::new(output);
-  let mut encoder = png::Encoder::new(writer, width, height);
-  encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
-  let mut writer = encoder.write_header()?;
-  let mut image_data = Vec::with_capacity(result_image.len() * 4);
-
-  for pixel in result_image {
-    let color = ppm::to_color(&pixel);
-    image_data.push(color.0);
-    image_data.push(color.1);
-    image_data.push(color.2);
-    image_data.push(255);
-  }
-
-  writer.write_image_data(&image_data)?;
-
+  renderer.write_image(&mut output, &pixels)?;
   Ok(())
 }

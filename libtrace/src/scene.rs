@@ -1,4 +1,4 @@
-use libtrace::{Hitable, Vec3};
+use crate::{Hitable, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

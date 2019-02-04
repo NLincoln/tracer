@@ -1,7 +1,7 @@
 use clap::{App, Arg};
+use libtrace::scene::{Image, Rendered, Scene};
 use png::HasParameters;
 use std::{error::Error, fs::File, io::BufWriter, thread};
-use worker_shared::{Image, Rendered, Scene};
 
 const SAMPLES_PER_WORKER: usize = 5;
 
