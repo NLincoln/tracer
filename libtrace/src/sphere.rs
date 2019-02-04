@@ -1,6 +1,7 @@
-use crate::{HitRecord, Hitable, Material, Ray, Vec3};
+use crate::{HitRecord, Material, Ray, Vec3};
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sphere {
   center: Vec3,
   radius: f32,
@@ -23,10 +24,7 @@ impl Sphere {
   pub fn center(&self) -> &Vec3 {
     &self.center
   }
-}
-
-impl Hitable for Sphere {
-  fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+  pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
     let oc = *ray.origin() - *self.center();
     let a = ray.direction().clone().dot(ray.direction());
     let b = oc.dot(ray.direction());

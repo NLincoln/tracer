@@ -1,11 +1,10 @@
 [package]
-name = "libtrace"
+name = "worker-shared"
 version = "0.1.0"
 authors = ["Nathan <nlincoln@intellifarms.com>"]
 edition = "2018"
 
 [dependencies]
-rand = "0.5"
+libtrace = { path = "../libtrace" }
 serde = { version = "1.0" }
-log = "0.4"
 serde_derive = "1.0"

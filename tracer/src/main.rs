@@ -1,9 +1,8 @@
-mod config;
 use std::f32;
 
 use libtrace::{
   material::{Dialectric, Lambertian, Material, Metal},
-  ppm, Camera, Hitable, Ray, Sphere, Vec3,
+  ppm, Camera, Hitable, Sphere, Vec3,
 };
 
 use rand::prelude::*;
@@ -16,53 +15,17 @@ use png::HasParameters;
 use std::fs;
 use std::time::Instant;
 
-/// interpolate between two vectors. t is an indicator
-/// of how "far along" the interpolation should be. It should
-/// be a floating point number in [0, 1]
-fn lerp(start_value: Vec3, end_value: Vec3, t: f32) -> Vec3 {
-  start_value * (1.0 - t) + end_value * t
-}
-
-fn color(ray: &Ray, world: impl Hitable, depth: i32) -> Vec3 {
-  match world.hit(ray, 0.001, std::f32::MAX) {
-    Some(hit_record) => {
-      if depth < 50 {
-        if let Some(scatter) = hit_record.material.scatter(ray, &hit_record) {
-          return scatter.attenuation * color(&scatter.scatter, world, depth + 1);
-        }
-      }
-      return Vec3::default();
-    }
-    None => {
-      /*
-       * We didn't get a hit! This means that
-       * we need to calculate the color
-       * of the sky instead.
-       */
-      let sky_color = Vec3::new(0.5, 0.7, 1.0);
-
-      // What direction was this ray traveling?
-      // we want this to be a unit vector so that our
-      // y component is between -1 and 1
-      let unit_direction = ray.direction().into_normalized();
-
-      // So since -1 < y() < 1, we want it to be 0 < y < 1,
-      // the easest way to do that is to add one to y() and divide.
-      // height represents how high on the screen this ray was
-      let height: f32 = 0.5 * (unit_direction.y() + 1.0);
-
-      lerp(Vec3::new(1., 1., 1.), sky_color, height)
-    }
-  }
-}
-
-fn random_scene() -> Vec<Box<dyn Hitable + Sync>> {
-  let mut world: Vec<Box<dyn Hitable + Sync>> = Vec::new();
-  world.push(Box::new(Sphere::new(
-    1000.,
-    (0., -1000., 0.).into(),
-    Lambertian::new((0.5, 0.5, 0.5).into()).into(),
-  )));
+#[allow(dead_code)]
+fn random_scene() -> Hitable {
+  let mut world: Vec<Hitable> = Vec::new();
+  world.push(
+    Sphere::new(
+      1000.,
+      (0., -1000., 0.).into(),
+      Lambertian::new((0.5, 0.5, 0.5).into()).into(),
+    )
+    .into(),
+  );
 
   let mut rng = rand::thread_rng();
 
@@ -100,29 +63,31 @@ fn random_scene() -> Vec<Box<dyn Hitable + Sync>> {
         Dialectric::new(1.5).into()
       };
 
-      world.push(Box::new(Sphere::new(0.2, center, material)));
+      world.push(Sphere::new(0.2, center, material).into());
     }
   }
 
-  world.push(Box::new(Sphere::new(
-    1.0,
-    (0., 1., 0.).into(),
-    Dialectric::new(1.5).into(),
-  )));
+  world.push(Sphere::new(1.0, (0., 1., 0.).into(), Dialectric::new(1.5).into()).into());
 
-  world.push(Box::new(Sphere::new(
-    1.0,
-    (-4., 1., 0.).into(),
-    Lambertian::new((0.4, 0.2, 0.1).into()).into(),
-  )));
+  world.push(
+    Sphere::new(
+      1.0,
+      (-4., 1., 0.).into(),
+      Lambertian::new((0.4, 0.2, 0.1).into()).into(),
+    )
+    .into(),
+  );
 
-  world.push(Box::new(Sphere::new(
-    1.0,
-    (4., 1., 0.).into(),
-    Metal::new((0.7, 0.6, 0.5).into(), 0.0).into(),
-  )));
+  world.push(
+    Sphere::new(
+      1.0,
+      (4., 1., 0.).into(),
+      Metal::new((0.7, 0.6, 0.5).into(), 0.0).into(),
+    )
+    .into(),
+  );
 
-  world
+  Hitable::List(world)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -147,15 +112,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   let start = Instant::now();
 
-  let config: config::Config =
+  let config: worker_shared::Scene =
     serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
 
   let width = config.image.width;
   let height = config.image.height;
   let num_samples = config.image.samples;
-
-  let world = random_scene();
-  let world = world.as_slice();
 
   let dist_to_focus = (config.camera.look_from - config.camera.look_at).length();
 
@@ -202,7 +164,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let u = (i + rng.gen::<f32>()) / width;
         let v = (j + rng.gen::<f32>()) / height;
         let r = camera.get_ray(u, v);
-        samples.push(color(&r, world, 0));
+        samples.push(libtrace::color(&config.sky_color, &r, &config.objects, 0));
       }
       let col: Vec3 = samples.into_iter().sum();
       let color = col / num_samples as f32;

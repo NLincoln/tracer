@@ -3,3 +3,5 @@
 *.ppm
 *.png
 
+node_modules
+.serverless

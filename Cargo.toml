@@ -1,2 +1,8 @@
 [workspace]
-members = ["libtrace", "tracer", "coordinator", "worker"]
+members = [
+  "libtrace",
+  "tracer",
+  "coordinator",
+  "worker",
+  "worker-shared",
+]

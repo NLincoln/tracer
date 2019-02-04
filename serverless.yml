@@ -1,0 +1,27 @@
+service: tracer-worker
+provider:
+  name: aws
+  runtime: rust
+  memorySize: 128
+  timeout: 30
+  region: us-east-2
+  deploymentBucket:
+    name: com.serverless.tracer-worker.deploys
+  deploymentPrefix: serverless
+
+stage: dev
+
+environment:
+  TRACER_LOG: info
+
+package:
+  individually: true
+
+plugins:
+  - serverless-rust
+
+functions:
+  worker:
+    handler: worker
+    events:
+      - http: POST /render
