@@ -7,7 +7,9 @@ use std::io::{BufWriter, Write};
 /// Most of the guts of rendering are already provided for you, but
 /// you are free to customize those methods as well.
 pub trait Renderer {
+  #[inline]
   fn scene(&self) -> &Scene;
+  #[inline]
   fn camera(&self, scene: &Scene) -> Camera {
     let width = scene.image.width;
     let height = scene.image.height;
@@ -34,7 +36,7 @@ pub trait Renderer {
     let scene = self.scene();
 
     let writer = BufWriter::new(buffer);
-    let mut encoder = png::Encoder::new(writer, scene.image.width, scene.image.height);
+    let mut encoder = png::Encoder::new(writer, scene.image.width(), scene.image.height());
     encoder.set(png::ColorType::RGBA).set(png::BitDepth::Eight);
     let mut writer = encoder.write_header()?;
     let mut image_data = Vec::with_capacity(pixels.len() * 4);
@@ -50,15 +52,20 @@ pub trait Renderer {
     Ok(())
   }
 
+  #[inline]
   fn get_pixels_to_render(&self, scene: &Scene) -> Vec<(u32, u32)> {
-    let width = scene.image.width;
-    let height = scene.image.height;
+    let (top, height) = match &scene.image.slice {
+      Some(slice) => (scene.image.height - slice.top, slice.height),
+      None => (0, scene.image.height),
+    };
 
-    let mut pixels = Vec::with_capacity((height * width) as usize);
+    let mut pixels = Vec::with_capacity(scene.image.num_pixels() as usize);
 
     for j in 0..height {
       let j = height - 1 - j;
-      for i in 0..width {
+      let j = j + top;
+
+      for i in 0..scene.image.width() {
         pixels.push((i, j));
       }
     }
@@ -85,13 +92,14 @@ pub trait Renderer {
     let j = location.1 as f32;
 
     let mut rng = rand::thread_rng();
+
     let mut samples = Vec::new();
     samples.reserve(num_samples as usize);
     for _ in 0..num_samples {
       // U and V are the actual coordinates on the
       // image plane we are targeting.
       // the rand adds a tiny bit of "wobble"
-      // to our sample, which is good for sampling
+      // to our sample, which 2is good for sampling
       let u = (i + rng.gen::<f32>()) / width;
       let v = (j + rng.gen::<f32>()) / height;
       let r = camera.get_ray(u, v);

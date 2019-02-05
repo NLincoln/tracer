@@ -132,8 +132,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
   }
 
-  let scene: Scene = serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
-  let num_pixels = scene.image.width * scene.image.height;
+  let mut scene: Scene =
+    serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
+  let num_pixels = scene.image.num_pixels();
+  scene.objects = random_scene();
+  serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
+
   let bar = ProgressBar::new(num_pixels as u64);
 
   bar

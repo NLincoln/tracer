@@ -14,6 +14,29 @@ pub struct Image {
   pub height: u32,
   pub width: u32,
   pub samples: u32,
+  pub slice: Option<ImageSlice>,
+}
+
+impl Image {
+  pub fn num_pixels(&self) -> u32 {
+    self.width() * self.height()
+  }
+  pub fn width(&self) -> u32 {
+    self.width
+  }
+  pub fn height(&self) -> u32 {
+    self
+      .slice
+      .as_ref()
+      .map(|slice| slice.height)
+      .unwrap_or(self.height)
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ImageSlice {
+  pub top: u32,
+  pub height: u32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
