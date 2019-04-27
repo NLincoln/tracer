@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "argparse": "^1.0.10",
+    "batch": "^0.6.1",
+    "bluebird": "^3.5.3",
+    "got": "^9.6.0",
+    "js-yaml": "^3.12.1",
+    "pngjs": "^3.3.3",
+    "serverless": "^1.36.3",
+    "serverless-rust": "^0.2.1"
+  }
+}

@@ -1,11 +1,12 @@
 use crate::{HitRecord, Ray, Vec3};
+use serde_derive::{Deserialize, Serialize};
 
 pub struct Scatter {
   pub attenuation: Vec3,
   pub scatter: Ray,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Material {
   Lambertian(Lambertian),
   Metal(Metal),
@@ -39,7 +40,7 @@ impl From<Dialectric> for Material {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Lambertian {
   albedo: Vec3,
 }
@@ -58,7 +59,7 @@ impl Lambertian {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Metal {
   albedo: Vec3,
   fuzz: f32,
@@ -85,7 +86,7 @@ fn reflect(vec: Vec3, norm: Vec3) -> Vec3 {
   vec - norm * 2. * vec.dot(&norm)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Dialectric {
   ref_idx: f32,
 }

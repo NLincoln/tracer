@@ -1,4 +1,5 @@
-use crate::{Material, Ray, Vec3};
+use crate::{Material, Ray, Sphere, Vec3};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct HitRecord {
@@ -7,27 +8,39 @@ pub struct HitRecord {
   pub normal: Vec3,
   pub material: Material,
 }
-
-pub trait Hitable {
-  fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Hitable {
+  Sphere(Sphere),
+  List(Vec<Hitable>),
 }
 
-impl Hitable for Vec<Box<dyn Hitable + Sync>> {
-  fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-    return (&self[..]).hit(ray, t_min, t_max);
+impl From<Sphere> for Hitable {
+  fn from(sphere: Sphere) -> Hitable {
+    Hitable::Sphere(sphere)
   }
 }
 
-impl<'a> Hitable for &'a [Box<dyn Hitable + Sync>] {
-  fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-    let mut closest_so_far = t_max;
-    let mut result: Option<HitRecord> = None;
-    for hitable in self.iter() {
-      if let Some(hit_record) = hitable.hit(ray, t_min, closest_so_far) {
-        closest_so_far = hit_record.t;
-        result = Some(hit_record);
+impl From<Vec<Hitable>> for Hitable {
+  fn from(list: Vec<Hitable>) -> Hitable {
+    Hitable::List(list)
+  }
+}
+
+impl Hitable {
+  pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    match self {
+      Hitable::Sphere(s) => s.hit(ray, t_min, t_max),
+      Hitable::List(list) => {
+        let mut closest_so_far = t_max;
+        let mut result: Option<HitRecord> = None;
+        for hitable in list.iter() {
+          if let Some(hit_record) = hitable.hit(ray, t_min, closest_so_far) {
+            closest_so_far = hit_record.t;
+            result = Some(hit_record);
+          }
+        }
+        return result;
       }
     }
-    return result;
   }
 }
