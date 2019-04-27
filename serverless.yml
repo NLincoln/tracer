@@ -3,7 +3,7 @@ provider:
   name: aws
   runtime: rust
   memorySize: 128
-  timeout: 30
+  timeout: 60
   region: us-east-2
   deploymentBucket:
     name: com.serverless.tracer-worker.deploys

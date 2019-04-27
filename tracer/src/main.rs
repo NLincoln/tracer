@@ -117,9 +117,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     fn scene(&self) -> &Scene {
       self.scene
     }
-    fn on_pixel_rendered(&self, _location: (u32, u32), _color: (u8, u8, u8)) {
-      self.progress_bar.inc(1);
-    }
     fn render(&self) -> Vec<(u8, u8, u8)> {
       let scene = self.scene();
       let camera = self.camera(&scene);
@@ -129,6 +126,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .into_par_iter()
         .map(|(i, j)| self.render_pixel(&camera, (i, j), &scene))
         .collect()
+    }
+    fn on_pixel_rendered(&self, _location: (u32, u32), _color: (u8, u8, u8)) {
+      self.progress_bar.inc(1);
     }
   }
 
