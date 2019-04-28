@@ -1,6 +1,8 @@
-use crate::{Material, Ray, StaticSphere, MovingSphere, Vec3};
-use serde_derive::{Deserialize, Serialize};
+use crate::aabb::Aabb;
+use crate::bvh::BvhNode;
 use crate::sphere::Sphere;
+use crate::{Material, MovingSphere, Ray, StaticSphere, Vec3};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct HitRecord {
@@ -13,6 +15,7 @@ pub struct HitRecord {
 pub enum Hitable {
     StaticSphere(StaticSphere),
     MovingSphere(MovingSphere),
+    BvhNode(BvhNode),
     List(Vec<Hitable>),
 }
 
@@ -28,6 +31,12 @@ impl From<MovingSphere> for Hitable {
         Hitable::MovingSphere(sphere)
     }
 }
+impl From<BvhNode> for Hitable {
+    #[inline]
+    fn from(node: BvhNode) -> Hitable {
+        Hitable::BvhNode(node)
+    }
+}
 
 impl From<Vec<Hitable>> for Hitable {
     #[inline]
@@ -41,6 +50,7 @@ impl Hitable {
         match self {
             Hitable::StaticSphere(s) => s.hit(ray, t_min, t_max),
             Hitable::MovingSphere(s) => s.hit(ray, t_min, t_max),
+            Hitable::BvhNode(node) => node.hit(ray, t_min, t_max),
             Hitable::List(list) => {
                 let mut closest_so_far = t_max;
                 let mut result: Option<HitRecord> = None;
@@ -51,6 +61,19 @@ impl Hitable {
                     }
                 }
                 return result;
+            }
+        }
+    }
+    pub fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
+        match self {
+            Hitable::StaticSphere(s) => s.bounding_box(t0, t1),
+            Hitable::MovingSphere(s) => s.bounding_box(t0, t1),
+            Hitable::BvhNode(node) => node.bounding_box(),
+            Hitable::List(list) => {
+                let init = list[0].bounding_box(t0, t1);
+                list[1..].into_iter().fold(init, |prev, curr| {
+                    Aabb::surrounding_box(prev, curr.bounding_box(t0, t1))
+                })
             }
         }
     }

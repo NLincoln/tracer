@@ -1,3 +1,5 @@
+mod aabb;
+mod bvh;
 mod camera;
 mod hitable;
 pub mod material;
@@ -8,11 +10,12 @@ pub mod scene;
 mod sphere;
 mod vec3;
 
+pub use bvh::BvhNode;
 pub use camera::Camera;
 pub use hitable::{HitRecord, Hitable};
 pub use material::{Material, Scatter};
 pub use ray::Ray;
-pub use sphere::{StaticSphere, MovingSphere};
+pub use sphere::{MovingSphere, StaticSphere};
 pub use vec3::Vec3;
 
 /// interpolate between two vectors. t is an indicator

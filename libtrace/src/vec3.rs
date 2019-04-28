@@ -17,6 +17,10 @@ impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Vec3 {
         Vec3([x, y, z])
     }
+
+    pub fn as_slice(&self) -> &[f32] {
+        &self.0
+    }
     /// Creates a random vector
     pub fn random_in_unit_circle() -> Vec3 {
         use rand::Rng;

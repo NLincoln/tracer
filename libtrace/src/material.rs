@@ -81,7 +81,7 @@ impl Metal {
             scatter: Ray::new(
                 hit_record.pointing_at,
                 reflected + Vec3::random_in_unit_circle() * self.fuzz,
-                ray.time()
+                ray.time(),
             ),
             attenuation: self.albedo,
         });

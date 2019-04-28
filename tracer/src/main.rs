@@ -1,9 +1,6 @@
 use std::f32;
 
-use libtrace::{
-    material::{Dialectric, Lambertian, Material, Metal},
-    Hitable, StaticSphere, MovingSphere, Vec3,
-};
+use libtrace::{material::{Dialectric, Lambertian, Material, Metal}, Hitable, MovingSphere, StaticSphere, Vec3, BvhNode};
 
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::*;
@@ -60,7 +57,13 @@ fn random_scene() -> Hitable {
             };
 
             let sphere: Hitable = if material_type < 0.8 {
-                MovingSphere::new(0.2, material, (0.0, center), (1.0, center + Vec3::new(0., 0.5*rng.gen::<f32>(), 0.))).into()
+                MovingSphere::new(
+                    0.2,
+                    material,
+                    (0.0, center),
+                    (1.0, center + Vec3::new(0., 0.5 * rng.gen::<f32>(), 0.)),
+                )
+                .into()
             } else {
                 StaticSphere::new(0.2, center, material).into()
             };
@@ -89,7 +92,7 @@ fn random_scene() -> Hitable {
         .into(),
     );
 
-    Hitable::List(world)
+    Hitable::BvhNode(BvhNode::new(world, 0.0, 1.0))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

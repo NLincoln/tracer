@@ -1,3 +1,4 @@
+use crate::aabb::Aabb;
 use crate::{HitRecord, Material, Ray, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
@@ -44,6 +45,8 @@ pub trait Sphere {
         }
         None
     }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb;
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -73,6 +76,13 @@ impl Sphere for StaticSphere {
     }
     fn material(&self) -> Material {
         self.material.clone()
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
+        Aabb::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        )
     }
 }
 
@@ -113,5 +123,17 @@ impl Sphere for MovingSphere {
     }
     fn material(&self) -> Material {
         self.material.clone()
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
+        let box0 = Aabb::new(
+            self.center(t0) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(t0) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        let box1 = Aabb::new(
+            self.center(t1) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(t1) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        Aabb::surrounding_box(box0, box1)
     }
 }
