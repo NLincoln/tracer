@@ -49,10 +49,10 @@ impl Hitable {
         }
     }
     #[inline]
-    pub fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
+    pub fn bounding_box(&self, time: (f32, f32)) -> Aabb {
         match self {
-            Hitable::StaticSphere(s) => s.bounding_box(t0, t1),
-            Hitable::MovingSphere(s) => s.bounding_box(t0, t1),
+            Hitable::StaticSphere(s) => s.bounding_box(),
+            Hitable::MovingSphere(s) => s.bounding_box(time),
             Hitable::BvhNode(node) => node.bounding_box(),
         }
     }

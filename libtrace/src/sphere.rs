@@ -20,8 +20,11 @@ pub trait Sphere {
             return None;
         }
         let discriminant = discriminant.sqrt();
-        let temp = (-b - discriminant) / a;
-        if temp < t_max && temp > t_min {
+        for discriminant_mul in [-1., 1.].iter() {
+            let temp = (-b + *discriminant_mul * discriminant) / a;
+            if temp > t_max || temp < t_min {
+                continue;
+            }
             let pointing_at = ray.point_at(temp);
             let normal = (pointing_at - center).scalar_div(radius);
             let result = Some(HitRecord {
@@ -31,22 +34,9 @@ pub trait Sphere {
                 material: self.material(),
             });
             return result;
-        } else {
-            let temp = (-b + discriminant) / a;
-            if temp < t_max && temp > t_min {
-                let pointing_at = ray.point_at(temp);
-                return Some(HitRecord {
-                    t: temp,
-                    pointing_at,
-                    normal: (pointing_at - center).scalar_div(radius),
-                    material: self.material(),
-                });
-            }
         }
         None
     }
-
-    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb;
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -64,6 +54,12 @@ impl StaticSphere {
             material,
         }
     }
+    pub fn bounding_box(&self) -> Aabb {
+        Aabb::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        )
+    }
 }
 
 impl Sphere for StaticSphere {
@@ -76,13 +72,6 @@ impl Sphere for StaticSphere {
     }
     fn material(&self) -> Material {
         self.material.clone()
-    }
-
-    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
-        Aabb::new(
-            self.center - Vec3::new(self.radius, self.radius, self.radius),
-            self.center + Vec3::new(self.radius, self.radius, self.radius),
-        )
     }
 }
 
@@ -109,6 +98,17 @@ impl MovingSphere {
             end,
         }
     }
+    pub fn bounding_box(&self, (t0, t1): (f32, f32)) -> Aabb {
+        let box0 = Aabb::new(
+            self.center(t0) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(t0) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        let box1 = Aabb::new(
+            self.center(t1) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(t1) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        Aabb::surrounding_box(box0, box1)
+    }
 }
 
 impl Sphere for MovingSphere {
@@ -123,17 +123,5 @@ impl Sphere for MovingSphere {
     }
     fn material(&self) -> Material {
         self.material.clone()
-    }
-
-    fn bounding_box(&self, t0: f32, t1: f32) -> Aabb {
-        let box0 = Aabb::new(
-            self.center(t0) - Vec3::new(self.radius, self.radius, self.radius),
-            self.center(t0) + Vec3::new(self.radius, self.radius, self.radius),
-        );
-        let box1 = Aabb::new(
-            self.center(t1) - Vec3::new(self.radius, self.radius, self.radius),
-            self.center(t1) + Vec3::new(self.radius, self.radius, self.radius),
-        );
-        Aabb::surrounding_box(box0, box1)
     }
 }

@@ -1,4 +1,4 @@
-use crate::{HitRecord, Ray, Vec3};
+use crate::{Ray, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -7,6 +7,7 @@ pub struct Aabb {
     max: Vec3,
 }
 
+#[inline]
 fn fmin(a: f32, b: f32) -> f32 {
     if a < b {
         a
@@ -15,6 +16,7 @@ fn fmin(a: f32, b: f32) -> f32 {
     }
 }
 
+#[inline]
 fn fmax(a: f32, b: f32) -> f32 {
     if a > b {
         a
@@ -51,8 +53,6 @@ impl Aabb {
     }
 
     pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> bool {
-        use std::cmp::{max, min};
-
         for a in 0..3 {
             let inv_d = 1.0 / ray.direction().as_slice()[a];
             let mut t0 = (self.min.as_slice()[a] - ray.origin().as_slice()[a]) * inv_d;
