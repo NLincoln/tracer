@@ -1,62 +1,117 @@
 use crate::{HitRecord, Material, Ray, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Sphere {
-  center: Vec3,
-  radius: f32,
-  material: Material,
+pub trait Sphere {
+    fn center(&self, time: f32) -> Vec3;
+    fn radius(&self) -> f32;
+    fn material(&self) -> Material;
+
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let center = self.center(ray.time());
+        let radius = self.radius();
+
+        let oc = *ray.origin() - center;
+        let a = ray.direction().clone().dot(ray.direction());
+        let b = oc.dot(ray.direction());
+        let c = oc.squared_length() - radius * radius;
+        let discriminant = b * b - a * c;
+        if discriminant < 0. {
+            return None;
+        }
+        let discriminant = discriminant.sqrt();
+        let temp = (-b - discriminant) / a;
+        if temp < t_max && temp > t_min {
+            let pointing_at = ray.point_at(temp);
+            let normal = (pointing_at - center).scalar_div(radius);
+            let result = Some(HitRecord {
+                t: temp,
+                pointing_at,
+                normal,
+                material: self.material(),
+            });
+            return result;
+        } else {
+            let temp = (-b + discriminant) / a;
+            if temp < t_max && temp > t_min {
+                let pointing_at = ray.point_at(temp);
+                return Some(HitRecord {
+                    t: temp,
+                    pointing_at,
+                    normal: (pointing_at - center).scalar_div(radius),
+                    material: self.material(),
+                });
+            }
+        }
+        None
+    }
 }
 
-impl Sphere {
-  pub fn new(radius: f32, center: Vec3, material: Material) -> Sphere {
-    Sphere {
-      radius,
-      center,
-      material,
-    }
-  }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StaticSphere {
+    radius: f32,
+    center: Vec3,
+    material: Material,
+}
 
-  pub fn radius(&self) -> f32 {
-    self.radius
-  }
+impl StaticSphere {
+    pub fn new(radius: f32, center: Vec3, material: Material) -> StaticSphere {
+        StaticSphere {
+            radius,
+            center,
+            material,
+        }
+    }
+}
 
-  pub fn center(&self) -> &Vec3 {
-    &self.center
-  }
-  pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-    let oc = *ray.origin() - *self.center();
-    let a = ray.direction().clone().dot(ray.direction());
-    let b = oc.dot(ray.direction());
-    let c = oc.squared_length() - self.radius() * self.radius();
-    let discriminant = b * b - a * c;
-    if discriminant < 0. {
-      return None;
+impl Sphere for StaticSphere {
+    fn center(&self, _time: f32) -> Vec3 {
+        self.center
     }
-    let discriminant = discriminant.sqrt();
-    let temp = (-b - discriminant) / a;
-    if temp < t_max && temp > t_min {
-      let pointing_at = ray.point_at(temp);
-      let normal = (pointing_at - *self.center()).scalar_div(self.radius);
-      let result = Some(HitRecord {
-        t: temp,
-        pointing_at,
-        normal,
-        material: self.material.clone(),
-      });
-      return result;
-    } else {
-      let temp = (-b + discriminant) / a;
-      if temp < t_max && temp > t_min {
-        let pointing_at = ray.point_at(temp);
-        return Some(HitRecord {
-          t: temp,
-          pointing_at,
-          normal: (pointing_at - *self.center()).scalar_div(self.radius),
-          material: self.material.clone(),
-        });
-      }
+
+    fn radius(&self) -> f32 {
+        self.radius
     }
-    None
-  }
+    fn material(&self) -> Material {
+        self.material.clone()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MovingSphere {
+    radius: f32,
+    material: Material,
+
+    start: (f32, Vec3),
+    end: (f32, Vec3),
+}
+
+impl MovingSphere {
+    pub fn new(
+        radius: f32,
+        material: Material,
+        start: (f32, Vec3),
+        end: (f32, Vec3),
+    ) -> MovingSphere {
+        MovingSphere {
+            radius,
+            material,
+            start,
+            end,
+        }
+    }
+}
+
+impl Sphere for MovingSphere {
+    fn center(&self, time: f32) -> Vec3 {
+        let (time0, center0) = self.start;
+        let (time1, center1) = self.end;
+        center0 + (center1 - center0) * ((time - time0) / (time1 - time0))
+    }
+
+    fn radius(&self) -> f32 {
+        self.radius
+    }
+    fn material(&self) -> Material {
+        self.material.clone()
+    }
 }
