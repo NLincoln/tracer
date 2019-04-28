@@ -7,6 +7,7 @@ pub struct Scatter {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type")]
 pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),

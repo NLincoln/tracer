@@ -30,6 +30,16 @@ impl BvhNode {
                 right: node.clone().into(),
                 bbox: node.bounding_box(start_time, end_time),
             };
+        } else if hitables.len() == 2 {
+            let left = hitables[0].clone();
+            let right = hitables[1].clone();
+            let bbox = Aabb::surrounding_box(left.bounding_box(start_time, end_time), right.bounding_box(start_time, end_time));
+
+            return BvhNode {
+                left: left.into(),
+                right: right.into(),
+                bbox
+            }
         }
 
         let last_half = hitables.split_off(hitables.len() / 2);
