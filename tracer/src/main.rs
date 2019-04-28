@@ -2,7 +2,7 @@ use std::f32;
 
 use libtrace::{
     material::{Dialectric, Lambertian, Material, Metal},
-    BvhNode, Hitable, MovingSphere, StaticSphere, Vec3,
+    Hitable, MovingSphere, StaticSphere, Vec3,
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
@@ -94,7 +94,7 @@ fn random_scene() -> Hitable {
         .into(),
     );
 
-    Hitable::BvhNode(BvhNode::new(world, (0.0, 1.0)))
+    Hitable::List(world.into())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
