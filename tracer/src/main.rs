@@ -11,7 +11,6 @@ use rayon::prelude::*;
 use std::error::Error;
 use std::fs;
 
-#[allow(dead_code)]
 fn random_scene() -> Hitable {
     let mut world: Vec<Hitable> = Vec::new();
     world.push(
@@ -149,7 +148,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
     let num_pixels = scene.image.num_pixels();
     scene.objects = random_scene();
-    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
+    //    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
 
     let bar = ProgressBar::new(num_pixels as u64);
 

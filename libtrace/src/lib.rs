@@ -8,6 +8,7 @@ mod ray;
 pub mod renderer;
 pub mod scene;
 mod sphere;
+mod texture;
 mod vec3;
 
 pub use bvh::BvhNode;
