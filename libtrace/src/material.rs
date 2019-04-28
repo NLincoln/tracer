@@ -14,6 +14,7 @@ pub enum Material {
 }
 
 impl Material {
+  #[inline]
   pub fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
     match self {
       Material::Lambertian(l) => l.scatter(ray, hit_record),
@@ -24,17 +25,20 @@ impl Material {
 }
 
 impl From<Lambertian> for Material {
+  #[inline]
   fn from(l: Lambertian) -> Material {
     Material::Lambertian(l)
   }
 }
 
 impl From<Metal> for Material {
+  #[inline]
   fn from(m: Metal) -> Material {
     Material::Metal(m)
   }
 }
 impl From<Dialectric> for Material {
+  #[inline]
   fn from(d: Dialectric) -> Material {
     Material::Dialectric(d)
   }
@@ -46,6 +50,7 @@ pub struct Lambertian {
 }
 
 impl Lambertian {
+  #[inline]
   pub fn new(albedo: Vec3) -> Lambertian {
     Lambertian { albedo }
   }
@@ -82,6 +87,7 @@ impl Metal {
   }
 }
 
+#[inline]
 fn reflect(vec: Vec3, norm: Vec3) -> Vec3 {
   vec - norm * 2. * vec.dot(&norm)
 }
@@ -128,11 +134,13 @@ impl Dialectric {
     })
   }
 }
+#[inline]
 fn schlick(cosine: f32, ref_idx: f32) -> f32 {
   let mut r0 = (1. - ref_idx) / (1. + ref_idx);
   r0 *= 2.;
   r0 + (1. - r0) * (1. - cosine).powi(5)
 }
+#[inline]
 fn refract(vec: &Vec3, norm: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
   let unit_vector = vec.into_normalized();
   let dt = unit_vector.dot(norm);

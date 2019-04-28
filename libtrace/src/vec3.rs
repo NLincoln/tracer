@@ -11,6 +11,7 @@ impl Debug for Vec3 {
     write!(f, "Vec3({}, {}, {})", self.x(), self.y(), self.z())
   }
 }
+
 impl Vec3 {
   /// Create a new vector from the given components
   pub fn new(x: f32, y: f32, z: f32) -> Vec3 {
@@ -75,6 +76,7 @@ impl Vec3 {
   /// assert!(len < 1.00001);
   /// ```
   ///
+  #[inline]
   pub fn normalize(&mut self) {
     let len = self.length();
     *self.mut_x() /= len;
@@ -82,54 +84,66 @@ impl Vec3 {
     *self.mut_z() /= len;
   }
 
+  #[inline]
   pub fn into_normalized(self) -> Vec3 {
     self / self.length()
   }
 
   /// Multipy the contents of this vector by a scalar value
+  #[inline]
   pub fn scalar_mult_mut(&mut self, val: f32) {
     *self.mut_x() *= val;
     *self.mut_y() *= val;
     *self.mut_z() *= val;
   }
 
+  #[inline]
   pub fn scalar_mult(mut self, val: f32) -> Vec3 {
     self.scalar_mult_mut(val);
     return self;
   }
 
+  #[inline]
   pub fn scalar_div_mut(&mut self, val: f32) {
     *self.mut_x() /= val;
     *self.mut_y() /= val;
     *self.mut_z() /= val;
   }
 
+  #[inline]
   pub fn scalar_div(mut self, val: f32) -> Vec3 {
     self.scalar_div_mut(val);
     self
   }
 
   /// Returns the x component of the vector (or i-hat, or <1, 0, 0>)
+  #[inline]
   pub fn x(&self) -> f32 {
     self.0[0]
   }
+  #[inline]
   pub fn y(&self) -> f32 {
     self.0[1]
   }
+  #[inline]
   pub fn z(&self) -> f32 {
     self.0[2]
   }
 
+  #[inline]
   pub fn mut_x(&mut self) -> &mut f32 {
     &mut self.0[0]
   }
+  #[inline]
   pub fn mut_y(&mut self) -> &mut f32 {
     &mut self.0[1]
   }
+  #[inline]
   pub fn mut_z(&mut self) -> &mut f32 {
     &mut self.0[2]
   }
 
+  #[inline]
   pub fn dot(mut self, other: &Vec3) -> f32 {
     *self.mut_x() *= other.x();
     *self.mut_y() *= other.y();
@@ -137,6 +151,7 @@ impl Vec3 {
     self.x() + self.y() + self.z()
   }
 
+  #[inline]
   pub fn cross(&self, other: &Vec3) -> Vec3 {
     Vec3::new(
       self.y() * other.z() - self.z() * other.y(),
@@ -242,6 +257,7 @@ impl Mul<f32> for Vec3 {
 
 impl Div for Vec3 {
   type Output = Vec3;
+  #[inline]
   fn div(self, rhs: Vec3) -> Vec3 {
     Vec3::new(self.x() / rhs.x(), self.y() / rhs.y(), self.z() / rhs.z())
   }
@@ -249,6 +265,7 @@ impl Div for Vec3 {
 
 impl Div<f32> for Vec3 {
   type Output = Vec3;
+  #[inline]
   fn div(mut self, rhs: f32) -> Vec3 {
     *self.mut_x() /= rhs;
     *self.mut_y() /= rhs;
@@ -258,6 +275,7 @@ impl Div<f32> for Vec3 {
 }
 
 impl DivAssign for Vec3 {
+  #[inline]
   fn div_assign(&mut self, rhs: Vec3) {
     *self.mut_x() /= rhs.x();
     *self.mut_y() /= rhs.y();
@@ -267,6 +285,7 @@ impl DivAssign for Vec3 {
 
 impl Neg for Vec3 {
   type Output = Vec3;
+  #[inline]
   fn neg(self) -> Vec3 {
     return self * -1.;
   }

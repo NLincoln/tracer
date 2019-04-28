@@ -24,6 +24,7 @@ impl Image {
   pub fn width(&self) -> u32 {
     self.width
   }
+  #[inline]
   pub fn height(&self) -> u32 {
     self
       .slice

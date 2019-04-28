@@ -114,6 +114,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   impl<'a> Renderer for WorkstationRenderer<'a> {
+    #[inline]
     fn scene(&self) -> &Scene {
       self.scene
     }
@@ -127,6 +128,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|(i, j)| self.render_pixel(&camera, (i, j), &scene))
         .collect()
     }
+    #[inline]
     fn on_pixel_rendered(&self, _location: (u32, u32), _color: (u8, u8, u8)) {
       self.progress_bar.inc(1);
     }

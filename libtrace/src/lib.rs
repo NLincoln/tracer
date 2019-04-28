@@ -18,6 +18,7 @@ pub use vec3::Vec3;
 /// interpolate between two vectors. t is an indicator
 /// of how "far along" the interpolation should be. It should
 /// be a floating point number in [0, 1]
+#[inline]
 pub fn lerp(start_value: Vec3, end_value: Vec3, t: f32) -> Vec3 {
   start_value * (1.0 - t) + end_value * t
 }

@@ -15,12 +15,14 @@ pub enum Hitable {
 }
 
 impl From<Sphere> for Hitable {
+  #[inline]
   fn from(sphere: Sphere) -> Hitable {
     Hitable::Sphere(sphere)
   }
 }
 
 impl From<Vec<Hitable>> for Hitable {
+  #[inline]
   fn from(list: Vec<Hitable>) -> Hitable {
     Hitable::List(list)
   }

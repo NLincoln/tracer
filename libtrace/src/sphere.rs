@@ -8,6 +8,8 @@ pub struct Sphere {
   material: Material,
 }
 
+
+
 impl Sphere {
   pub fn new(radius: f32, center: Vec3, material: Material) -> Sphere {
     Sphere {
@@ -17,13 +19,24 @@ impl Sphere {
     }
   }
 
+  pub fn moving(radius: f32, center: Vec3, material: Material) -> Sphere {
+      Sphere {
+          radius,
+          center,
+          material,
+      }
+  }
+
+  #[inline]
   pub fn radius(&self) -> f32 {
     self.radius
   }
 
+  #[inline]
   pub fn center(&self) -> &Vec3 {
-    &self.center
+      &self.center
   }
+
   pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
     let oc = *ray.origin() - *self.center();
     let a = ray.direction().clone().dot(ray.direction());
