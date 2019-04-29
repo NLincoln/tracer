@@ -24,14 +24,15 @@ fn two_spheres() -> Hitable {
 }
 
 fn two_perlin_spheres() -> Hitable {
+    let text: Texture = NoiseTexture::new(1.).into();
     let world: Vec<Hitable> = vec![
         StaticSphere::new(
             1000.,
             (0., -1000., 0.),
-            Lambertian::new(NoiseTexture::new(4.)),
+            Lambertian::new(text.clone()),
         )
         .into(),
-        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(NoiseTexture::new(4.))).into(),
+        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text)).into(),
     ];
     Hitable::List(world.into())
 }

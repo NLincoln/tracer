@@ -17,12 +17,21 @@ fn perlin_generate() -> Vec<Vec3> {
     buf
 }
 
+fn perlin_generate_float() -> Vec<f32> {
+    let mut rng = thread_rng();
+
+    let mut buf: Vec<f32> = Vec::with_capacity(256);
+    for i in 0..256 {
+        buf.push(rng.gen());
+    }
+    buf
+}
+
 fn permute(p: &mut [usize]) {
     let mut i = p.len() - 1;
-    while i > 0 {
-        let target = (thread_rng().gen::<f32>() * (i as f32 + 1.)) as usize;
+    for i in 0..p.len() {
+        let target = thread_rng().gen_range(i, p.len());
         p.swap(i, target);
-        i -= 1;
     }
 }
 
@@ -37,6 +46,7 @@ lazy_static! {
     static ref PERM_Y: Vec<usize> = perlin_generate_perm();
     static ref PERM_Z: Vec<usize> = perlin_generate_perm();
     static ref RAN_VEC: Vec<Vec3> = perlin_generate();
+    static ref RAN_FLOAT: Vec<f32> = perlin_generate_float();
 }
 
 fn noise(p: Vec3) -> f32 {
@@ -44,33 +54,15 @@ fn noise(p: Vec3) -> f32 {
     let v = p.y() - p.y().floor();
     let w = p.z() - p.z().floor();
 
-    let i = p.x().floor() as isize;
-    let j = p.y().floor() as isize;
-    let k = p.z().floor() as isize;
+    let i = ((4. * p.x()) as isize & 0xff) as usize;
+    let j = ((4. * p.y()) as isize & 0xff) as usize;
+    let k = ((4. * p.z()) as isize & 0xff) as usize;
 
-    let mut buf = [Vec3::from(0.); 8];
-    for di in 0..2isize {
-        for dj in 0..2isize {
-            for dk in 0..2isize {
-                let x_term  = ((i + di) & 255) as usize;
-                let y_term  = ((j + dj) & 255) as usize;
-                let z_term  = ((k + dk) & 255) as usize;
-
-                buf[(di * 4 + dj * 2 + dk) as usize] = RAN_VEC
-                    [PERM_X[x_term] ^ PERM_Y[y_term] ^ PERM_Z[z_term]]
-            }
-        }
-    }
-
-    trilinear_interp(buf, u, v, w)
+    RAN_FLOAT[PERM_X[i] ^ PERM_Y[j] ^ PERM_Z[k]]
 }
 
-#[inline]
-fn trilinear_interp(c: [Vec3; 8], u: f32, v: f32, w: f32) -> f32 {
+fn trilinear_interp(c: [f32; 8], u: f32, v: f32, w: f32) -> f32 {
     let mut accum = 0.;
-    let uu = u * u * (3. - 2. * u);
-    let vv = v * v * (3. - 2. * v);
-    let ww = w * w * (3. - 2. * w);
 
     for i in 0..2 {
         let i_f = i as f32;
@@ -79,11 +71,10 @@ fn trilinear_interp(c: [Vec3; 8], u: f32, v: f32, w: f32) -> f32 {
             for k in 0..2 {
                 let k_f = k as f32;
 
-                let weight: Vec3 = (u - i_f, v - j_f, w - k_f).into();
-                accum += (i_f * uu + (1. - i_f) * (1. - uu))
-                    * (j_f * vv + (1. - j_f) * (1. - vv))
-                    * (k_f * ww + (1. - k_f) * (1. - ww))
-                    * c[i * 4 + j * 2 + k].dot(weight);
+                accum += (i_f * u + (1. - i_f) * (1. - u))
+                    * (j_f * v + (1. - j_f) * (1. - v))
+                    * (k_f * w + (1. - k_f) * (1. - w))
+                    * c[i * 4 + j * 2 + k];
             }
         }
     }
