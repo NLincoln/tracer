@@ -28,7 +28,6 @@ fn perlin_generate_float() -> Vec<f32> {
 }
 
 fn permute(p: &mut [usize]) {
-    let mut i = p.len() - 1;
     for i in 0..p.len() {
         let target = thread_rng().gen_range(i, p.len());
         p.swap(i, target);
@@ -50,15 +49,26 @@ lazy_static! {
 }
 
 fn noise(p: Vec3) -> f32 {
-    let u = p.x() - p.x().floor();
-    let v = p.y() - p.y().floor();
-    let w = p.z() - p.z().floor();
-
-    let i = ((4. * p.x()) as isize & 0xff) as usize;
-    let j = ((4. * p.y()) as isize & 0xff) as usize;
-    let k = ((4. * p.z()) as isize & 0xff) as usize;
-
-    RAN_FLOAT[PERM_X[i] ^ PERM_Y[j] ^ PERM_Z[k]]
+    use std::f32;
+    fn add_and_usize(a: f32, b: usize) -> usize {
+        ((a as isize + b as isize) & 255) as usize
+    }
+    let (u, v, w) = p
+        .apply(|v| v - v.floor())
+        .apply(|val| val * val * (3. - 2. * val))
+        .to_tuple();
+    let (i, j, k) = p.apply(f32::floor).to_tuple();
+    let mut buf = [0.0; 8];
+    for di in 0..2 {
+        for dj in 0..2 {
+            for dk in 0..2 {
+                buf[di * 4 + dj * 2 + dk] = RAN_FLOAT[PERM_X[add_and_usize(i, di)]
+                    ^ PERM_Y[add_and_usize(j, dj)]
+                    ^ PERM_Z[add_and_usize(k, dk)]]
+            }
+        }
+    }
+    trilinear_interp(buf, u, v, w)
 }
 
 fn trilinear_interp(c: [f32; 8], u: f32, v: f32, w: f32) -> f32 {

@@ -18,6 +18,17 @@ impl Vec3 {
         Vec3([x, y, z])
     }
 
+    pub fn apply<F>(self, mut f: F) -> Vec3
+    where
+        F: FnMut(f32) -> f32,
+    {
+        Vec3::new(f(self.x()), f(self.y()), f(self.z()))
+    }
+
+    pub fn to_tuple(self) -> (f32, f32, f32) {
+        (self.x(), self.y(), self.z())
+    }
+
     pub fn as_slice(&self) -> &[f32] {
         &self.0
     }
