@@ -56,8 +56,8 @@ impl Vec3 {
     pub fn length(&self) -> f32 {
         return self.squared_length().sqrt();
     }
-    pub fn squared_length(&self) -> f32 {
-        return self.clone().dot(self);
+    pub fn squared_length(self) -> f32 {
+        return self.dot(self);
     }
 
     /// Mutates the underlying vector and normalizes it, which means it
@@ -148,7 +148,7 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn dot(mut self, other: &Vec3) -> f32 {
+    pub fn dot(mut self, other: Vec3) -> f32 {
         *self.mut_x() *= other.x();
         *self.mut_y() *= other.y();
         *self.mut_z() *= other.z();
@@ -156,7 +156,7 @@ impl Vec3 {
     }
 
     #[inline]
-    pub fn cross(&self, other: &Vec3) -> Vec3 {
+    pub fn cross(self, other: Vec3) -> Vec3 {
         Vec3::new(
             self.y() * other.z() - self.z() * other.y(),
             self.z() * other.x() - self.x() * other.z(),
@@ -297,6 +297,12 @@ impl Neg for Vec3 {
 impl From<(f32, f32, f32)> for Vec3 {
     fn from(triple: (f32, f32, f32)) -> Vec3 {
         Vec3::new(triple.0, triple.1, triple.2)
+    }
+}
+
+impl From<f32> for Vec3 {
+    fn from(val: f32) -> Vec3 {
+        Vec3::new(val, val, val)
     }
 }
 

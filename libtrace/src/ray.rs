@@ -23,12 +23,12 @@ impl Ray {
         }
     }
     #[inline]
-    pub fn origin(&self) -> &Vec3 {
-        &self.origin
+    pub fn origin(&self) -> Vec3 {
+        self.origin
     }
     #[inline]
-    pub fn direction(&self) -> &Vec3 {
-        &self.direction
+    pub fn direction(&self) -> Vec3 {
+        self.direction
     }
 
     pub fn time(&self) -> f32 {

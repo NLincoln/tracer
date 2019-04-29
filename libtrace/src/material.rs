@@ -1,3 +1,4 @@
+use crate::texture::Texture;
 use crate::{HitRecord, Ray, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
@@ -47,19 +48,21 @@ impl From<Dialectric> for Material {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Lambertian {
-    albedo: Vec3,
+    albedo: Texture,
 }
 
 impl Lambertian {
     #[inline]
-    pub fn new(albedo: Vec3) -> Lambertian {
-        Lambertian { albedo }
+    pub fn new<T: Into<Texture>>(albedo: T) -> Lambertian {
+        Lambertian {
+            albedo: albedo.into(),
+        }
     }
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
         let target = hit_record.normal + Vec3::random_in_unit_circle();
         let scattered = Ray::new(hit_record.pointing_at, target, ray.time());
         return Some(Scatter {
-            attenuation: self.albedo,
+            attenuation: self.albedo.value(0., 0., hit_record.pointing_at),
             scatter: scattered,
         });
     }
@@ -67,14 +70,17 @@ impl Lambertian {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Metal {
-    albedo: Vec3,
+    albedo: Texture,
     fuzz: f32,
 }
 
 impl Metal {
-    pub fn new(albedo: Vec3, fuzz: f32) -> Metal {
+    pub fn new<T: Into<Texture>>(albedo: T, fuzz: f32) -> Metal {
         let fuzz = if fuzz <= 1. { fuzz } else { 1. };
-        Metal { albedo, fuzz }
+        Metal {
+            albedo: albedo.into(),
+            fuzz,
+        }
     }
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
         let reflected = reflect(ray.direction().into_normalized(), hit_record.normal);
@@ -84,14 +90,14 @@ impl Metal {
                 reflected + Vec3::random_in_unit_circle() * self.fuzz,
                 ray.time(),
             ),
-            attenuation: self.albedo,
+            attenuation: self.albedo.value(0., 0., hit_record.pointing_at),
         });
     }
 }
 
 #[inline]
 fn reflect(vec: Vec3, norm: Vec3) -> Vec3 {
-    vec - norm * 2. * vec.dot(&norm)
+    vec - norm * 2. * vec.dot(norm)
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -104,22 +110,22 @@ impl Dialectric {
         Dialectric { ref_idx }
     }
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
-        let (outward_normal, ni_over_nt, cosine) = if ray.direction().dot(&hit_record.normal) > 0. {
+        let (outward_normal, ni_over_nt, cosine) = if ray.direction().dot(hit_record.normal) > 0. {
             let cosine =
-                self.ref_idx * ray.direction().dot(&hit_record.normal) / ray.direction().length();
+                self.ref_idx * ray.direction().dot(hit_record.normal) / ray.direction().length();
 
             (-hit_record.normal, self.ref_idx, cosine)
         } else {
-            let cosine = -ray.direction().dot(&hit_record.normal) / ray.direction().length();
+            let cosine = -ray.direction().dot(hit_record.normal) / ray.direction().length();
             (hit_record.normal, 1.0 / self.ref_idx, cosine)
         };
 
-        let (reflect_prob, refracted) = match refract(ray.direction(), &outward_normal, ni_over_nt)
+        let (reflect_prob, refracted) = match refract(&ray.direction(), &outward_normal, ni_over_nt)
         {
             Some(refracted) => (schlick(cosine, self.ref_idx), Some(refracted)),
             None => (1.0, None),
         };
-        let reflected = reflect(*ray.direction(), hit_record.normal);
+        let reflected = reflect(ray.direction(), hit_record.normal);
         let scatter = match refracted {
             Some(refracted) => {
                 if rand::random::<f32>() < reflect_prob {
@@ -146,7 +152,7 @@ fn schlick(cosine: f32, ref_idx: f32) -> f32 {
 #[inline]
 fn refract(vec: &Vec3, norm: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
     let unit_vector = vec.into_normalized();
-    let dt = unit_vector.dot(norm);
+    let dt = unit_vector.dot(*norm);
     let discriminant = 1.0 - ni_over_nt * ni_over_nt * (1. - dt * dt);
     if discriminant > 0. {
         Some((unit_vector - *norm * dt) * ni_over_nt - *norm * discriminant.sqrt())

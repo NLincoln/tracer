@@ -1,15 +1,18 @@
 mod aabb;
+mod bvh;
 mod camera;
 mod hitable;
 pub mod material;
+mod perlin;
 pub mod ppm;
 mod ray;
 pub mod renderer;
 pub mod scene;
 mod sphere;
-mod texture;
+pub mod texture;
 mod vec3;
 
+pub use bvh::BvhNode;
 pub use camera::Camera;
 pub use hitable::{HitRecord, Hitable};
 pub use material::{Material, Scatter};
