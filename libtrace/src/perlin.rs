@@ -55,7 +55,7 @@ fn noise(p: Vec3) -> f32 {
             }
         }
     }
-    perlin_interp(buf, p)
+    (perlin_interp(buf, p) + 1.) / 2.
 }
 
 fn perlin_interp(c: [Vec3; 8], p: Vec3) -> f32 {
@@ -84,6 +84,7 @@ fn perlin_interp(c: [Vec3; 8], p: Vec3) -> f32 {
             }
         }
     }
+
     accum
 }
 
