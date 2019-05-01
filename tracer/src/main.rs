@@ -25,7 +25,7 @@ fn two_spheres() -> Hitable {
 }
 
 fn two_perlin_spheres() -> Hitable {
-    let text: Texture = NoiseTexture::new(8.).into();
+    let text: Texture = NoiseTexture::new(4.).into();
     //    let text: Texture = Color::new(0.).into();
     let world: Vec<Hitable> = vec![
         StaticSphere::new(1000., (0., -1000., 0.), Lambertian::new(text.clone())).into(),

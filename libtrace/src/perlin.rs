@@ -38,6 +38,17 @@ lazy_static! {
     static ref RAN_FLOAT: Vec<f32> = perlin_generate_float();
 }
 
+fn turbulence(mut p: Vec3, depth: usize) -> f32 {
+    let mut accum = 0.0;
+    let mut weight = 1.0;
+    for _ in 0..depth {
+        accum += weight * noise(p);
+        weight *= 0.5;
+        p *= 2.;
+    }
+    accum.abs()
+}
+
 fn noise(p: Vec3) -> f32 {
     fn add_and_usize(a: i32, b: i32) -> usize {
         ((a + b) & 255) as usize
@@ -55,7 +66,7 @@ fn noise(p: Vec3) -> f32 {
             }
         }
     }
-    (perlin_interp(buf, p) + 1.) / 2.
+    perlin_interp(buf, p)
 }
 
 fn perlin_interp(c: [Vec3; 8], p: Vec3) -> f32 {
@@ -105,6 +116,6 @@ impl NoiseTexture {
     }
 
     pub(crate) fn value(&self, _u: f32, _v: f32, p: Vec3) -> Vec3 {
-        noise(p * self.scale).into()
+        (0.5 * (1. + (self.scale * p.z() + 10. * turbulence(p, 10)).sin())).into()
     }
 }
