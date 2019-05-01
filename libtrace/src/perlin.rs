@@ -7,12 +7,9 @@ fn perlin_generate() -> Vec<Vec3> {
     let mut rng = thread_rng();
 
     let mut buf = Vec::with_capacity(256);
-    for i in 0..256 {
-        let x = rng.gen_range(-1., 1.);
-        let y = rng.gen_range(-1., 1.);
-        let z = rng.gen_range(-1., 1.);
-
-        buf.push(Vec3::new(x, y, z).into_normalized());
+    for _ in 0..256 {
+        let vec = Vec3::from(|| rng.gen_range(-1., 1.)).into_normalized();
+        buf.push(vec);
     }
     buf
 }
@@ -21,22 +18,15 @@ fn perlin_generate_float() -> Vec<f32> {
     let mut rng = thread_rng();
 
     let mut buf: Vec<f32> = Vec::with_capacity(256);
-    for i in 0..256 {
-        buf.push(rng.gen());
+    for _ in 0..256 {
+        buf.push(rng.gen::<f32>());
     }
     buf
 }
 
-fn permute(p: &mut [usize]) {
-    for i in 0..p.len() {
-        let target = thread_rng().gen_range(i, p.len());
-        p.swap(i, target);
-    }
-}
-
 fn perlin_generate_perm() -> Vec<usize> {
-    let mut p: Vec<_> = (0..256).into_iter().collect();
-    permute(&mut p);
+    let mut p: Vec<_> = (0..256).collect();
+    thread_rng().shuffle(&mut p);
     p
 }
 
@@ -49,42 +39,48 @@ lazy_static! {
 }
 
 fn noise(p: Vec3) -> f32 {
-    use std::f32;
-    fn add_and_usize(a: f32, b: usize) -> usize {
-        ((a as isize + b as isize) & 255) as usize
+    fn add_and_usize(a: i32, b: i32) -> usize {
+        ((a + b) & 255) as usize
     }
-    let (u, v, w) = p
-        .apply(|v| v - v.floor())
-        .apply(|val| val * val * (3. - 2. * val))
-        .to_tuple();
-    let (i, j, k) = p.apply(f32::floor).to_tuple();
-    let mut buf = [0.0; 8];
-    for di in 0..2 {
-        for dj in 0..2 {
-            for dk in 0..2 {
-                buf[di * 4 + dj * 2 + dk] = RAN_FLOAT[PERM_X[add_and_usize(i, di)]
+
+    let (i, j, k) = p.apply(|v| v.floor()).to_tuple_and(|val| val as i32);
+
+    let mut buf = [Vec3::from(0.0); 8];
+    for di in 0..=1i32 {
+        for dj in 0..=1i32 {
+            for dk in 0..=1i32 {
+                buf[(di * 4 + dj * 2 + dk) as usize] = RAN_VEC[PERM_X[add_and_usize(i, di)]
                     ^ PERM_Y[add_and_usize(j, dj)]
                     ^ PERM_Z[add_and_usize(k, dk)]]
             }
         }
     }
-    trilinear_interp(buf, u, v, w)
+    perlin_interp(buf, p)
 }
 
-fn trilinear_interp(c: [f32; 8], u: f32, v: f32, w: f32) -> f32 {
+fn perlin_interp(c: [Vec3; 8], p: Vec3) -> f32 {
     let mut accum = 0.;
+    let rounded = p.apply(|v| v - v.floor());
+    let (u, v, w) = rounded.to_tuple();
+    let (uu, vv, ww) = rounded.apply(|val| val * val * (3. - 2. * val)).to_tuple();
 
-    for i in 0..2 {
+    for i in 0..=1 {
         let i_f = i as f32;
-        for j in 0..2 {
+        for j in 0..=1 {
             let j_f = j as f32;
-            for k in 0..2 {
+            for k in 0..=1 {
                 let k_f = k as f32;
 
-                accum += (i_f * u + (1. - i_f) * (1. - u))
-                    * (j_f * v + (1. - j_f) * (1. - v))
-                    * (k_f * w + (1. - k_f) * (1. - w))
-                    * c[i * 4 + j * 2 + k];
+                let weight = Vec3::new(u - i_f, v - j_f, w - k_f);
+
+                let c_vec = c[i * 4 + j * 2 + k];
+
+                let term = (i_f * uu + (1. - i_f) * (1. - uu))
+                    * (j_f * vv + (1. - j_f) * (1. - vv))
+                    * (k_f * ww + (1. - k_f) * (1. - ww))
+                    * c_vec.dot(weight);
+
+                accum += term;
             }
         }
     }
@@ -107,7 +103,7 @@ impl NoiseTexture {
         NoiseTexture { scale }
     }
 
-    pub(crate) fn value(&self, u: f32, v: f32, p: Vec3) -> Vec3 {
+    pub(crate) fn value(&self, _u: f32, _v: f32, p: Vec3) -> Vec3 {
         noise(p * self.scale).into()
     }
 }

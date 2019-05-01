@@ -7,7 +7,6 @@ use std::io::{BufWriter, Write};
 /// Most of the guts of rendering are already provided for you, but
 /// you are free to customize those methods as well.
 pub trait Renderer {
-    #[inline]
     fn scene(&self) -> &Scene;
     #[inline]
     fn camera(&self, scene: &Scene) -> Camera {
@@ -112,7 +111,7 @@ pub trait Renderer {
         let color = col / num_samples as f32;
         let color = crate::ppm::to_color(&color);
         self.on_pixel_rendered(location, color);
-        return color;
+        color
     }
     fn on_pixel_rendered(&self, _location: (u32, u32), _color: (u8, u8, u8)) {}
 }

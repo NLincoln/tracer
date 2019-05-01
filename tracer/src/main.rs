@@ -6,12 +6,13 @@ use libtrace::{
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
-use libtrace::texture::{CheckerBoard, NoiseTexture, RecursiveCheckerboard, Texture};
+use libtrace::texture::{CheckerBoard, NoiseTexture, Texture};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
 use std::fs;
 
+#[allow(unused)]
 fn two_spheres() -> Hitable {
     use texture::Color;
     let checker: Texture =
@@ -24,16 +25,16 @@ fn two_spheres() -> Hitable {
 }
 
 fn two_perlin_spheres() -> Hitable {
-    let text: Texture = NoiseTexture::new(4.).into();
+    let text: Texture = NoiseTexture::new(8.).into();
+    //    let text: Texture = Color::new(0.).into();
     let world: Vec<Hitable> = vec![
         StaticSphere::new(1000., (0., -1000., 0.), Lambertian::new(text.clone())).into(),
-        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text)).into(),
+        //        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text)).into(),
     ];
     Hitable::List(world.into())
 }
 
 fn random_scene() -> Hitable {
-    use std::f32::consts::PI;
     use texture::Color;
     let mut world: Vec<Hitable> = Vec::new();
 
@@ -84,7 +85,6 @@ fn random_scene() -> Hitable {
                     ),
                     0.5 * rng.gen::<f32>(),
                 )
-                .into()
             } else {
                 Dialectric::new(1.5).into()
             };
@@ -167,14 +167,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     scene.objects = two_perlin_spheres();
     //    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
 
-    let bar = ProgressBar::new(num_pixels as u64);
+    let progress_bar = ProgressBar::new(num_pixels as u64);
 
-    bar.set_style(ProgressStyle::default_bar().template(
+    progress_bar.set_style(ProgressStyle::default_bar().template(
         "[{elapsed_precise} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]",
     ));
 
     let renderer = WorkstationRenderer {
-        progress_bar: &bar,
+        progress_bar: &progress_bar,
         scene: &scene,
     };
 

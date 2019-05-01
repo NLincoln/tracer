@@ -37,6 +37,6 @@ fn handler(request: Request, _: Context) -> Result<impl IntoResponse, HandlerErr
 
     Ok(serde_json::to_string(&Rendered {
         image: scene.image,
-        pixels: pixels,
+        pixels,
     })?)
 }

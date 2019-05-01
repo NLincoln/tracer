@@ -37,7 +37,7 @@ pub fn color(sky_color: &Vec3, ray: &Ray, world: &Hitable, depth: i32) -> Vec3 {
                         * color(sky_color, &scatter.scatter, world, depth + 1);
                 }
             }
-            return Vec3::default();
+            Vec3::default()
         }
         None => {
             /*

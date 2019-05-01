@@ -67,7 +67,7 @@ impl Hitable {
                         result = Some(hit_record);
                     }
                 }
-                return result;
+                result
             }
         }
     }
@@ -79,7 +79,7 @@ impl Hitable {
             Hitable::BvhNode(node) => node.bounding_box(),
             Hitable::List(HitableList { items }) => {
                 let init = items[0].bounding_box(time);
-                items[1..].into_iter().fold(init, |prev, curr| {
+                items[1..].iter().fold(init, |prev, curr| {
                     Aabb::surrounding_box(prev, curr.bounding_box(time))
                 })
             }

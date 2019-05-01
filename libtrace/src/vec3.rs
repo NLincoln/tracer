@@ -29,6 +29,14 @@ impl Vec3 {
         (self.x(), self.y(), self.z())
     }
 
+    pub fn to_tuple_and<T, F>(self, mut f: F) -> (T, T, T)
+    where
+        F: FnMut(f32) -> T,
+    {
+        let (x, y, z) = self.to_tuple();
+        (f(x), f(y), f(z))
+    }
+
     pub fn as_slice(&self) -> &[f32] {
         &self.0
     }
@@ -52,7 +60,7 @@ impl Vec3 {
             return None;
         }
 
-        return Some(Vec3([slice[0], slice[1], slice[2]]));
+        Some(Vec3([slice[0], slice[1], slice[2]]))
     }
 
     /// Creates a vector from an array slice, unchecked
@@ -61,14 +69,14 @@ impl Vec3 {
     ///
     /// If the slice has a length < 3, this will panic
     pub unsafe fn from_slice_unchecked(slice: &[f32]) -> Vec3 {
-        return Vec3([slice[0], slice[1], slice[2]]);
+        Vec3([slice[0], slice[1], slice[2]])
     }
 
     pub fn length(&self) -> f32 {
-        return self.squared_length().sqrt();
+        self.squared_length().sqrt()
     }
     pub fn squared_length(self) -> f32 {
-        return self.dot(self);
+        self.dot(self)
     }
 
     /// Mutates the underlying vector and normalizes it, which means it
@@ -115,7 +123,7 @@ impl Vec3 {
     #[inline]
     pub fn scalar_mult(mut self, val: f32) -> Vec3 {
         self.scalar_mult_mut(val);
-        return self;
+        self
     }
 
     #[inline]
@@ -302,7 +310,7 @@ impl Neg for Vec3 {
     type Output = Vec3;
     #[inline]
     fn neg(self) -> Vec3 {
-        return self * -1.;
+        self * -1.
     }
 }
 impl From<(f32, f32, f32)> for Vec3 {
@@ -314,6 +322,15 @@ impl From<(f32, f32, f32)> for Vec3 {
 impl From<f32> for Vec3 {
     fn from(val: f32) -> Vec3 {
         Vec3::new(val, val, val)
+    }
+}
+
+impl<F> From<F> for Vec3
+where
+    F: FnMut() -> f32,
+{
+    fn from(mut f: F) -> Vec3 {
+        Vec3::new(f(), f(), f())
     }
 }
 

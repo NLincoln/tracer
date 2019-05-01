@@ -37,21 +37,6 @@ impl Ray {
 
     #[inline]
     pub fn point_at(&self, t: f32) -> Vec3 {
-        return self.origin.clone() + self.direction.clone().scalar_mult(t);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_ray_debug() {
-        assert_eq!(
-            format!(
-                "{:?}",
-                Ray::new(Vec3::new(1., 2., 3.), Vec3::new(4., 5., 6.))
-            ),
-            "Ray(Vec3(1, 2, 3) + t * Vec3(4, 5, 6))".to_string()
-        );
+        self.origin + self.direction.scalar_mult(t)
     }
 }

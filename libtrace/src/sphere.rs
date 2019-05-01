@@ -12,7 +12,7 @@ pub trait Sphere {
         let radius = self.radius();
 
         let oc = ray.origin() - center;
-        let a = ray.direction().clone().dot(ray.direction());
+        let a = ray.direction().dot(ray.direction());
         let b = oc.dot(ray.direction());
         let c = oc.squared_length() - radius * radius;
         let discriminant = b * b - a * c;
