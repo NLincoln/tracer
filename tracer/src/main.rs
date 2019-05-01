@@ -2,30 +2,67 @@ use std::f32;
 
 use libtrace::{
     material::{Dialectric, Lambertian, Material, Metal},
-    Hitable, MovingSphere, StaticSphere, Vec3,
+    texture, BvhNode, Hitable, MovingSphere, StaticSphere, Vec3,
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
+use libtrace::texture::{CheckerBoard, NoiseTexture, Texture};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
 use std::fs;
 
+#[allow(unused)]
+fn two_spheres() -> Hitable {
+    use texture::Color;
+    let checker: Texture =
+        CheckerBoard::new(10., Color::new((0.2, 0.3, 0.1)), Color::new(0.9)).into();
+    let world: Vec<Hitable> = vec![
+        StaticSphere::new(10., (0., -10., 0.), Lambertian::new(checker.clone())).into(),
+        StaticSphere::new(2.5, (0., 2.5, 0.), Lambertian::new(checker.clone())).into(),
+    ];
+    Hitable::List(world.into())
+}
+
+fn two_perlin_spheres() -> Hitable {
+    let text: Texture = NoiseTexture::new(4.).into();
+    //    let text: Texture = Color::new(0.).into();
+    let world: Vec<Hitable> = vec![
+        StaticSphere::new(1000., (0., -1000., 0.), Lambertian::new(text.clone())).into(),
+        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text)).into(),
+    ];
+    Hitable::List(world.into())
+}
+
 fn random_scene() -> Hitable {
+    use texture::Color;
     let mut world: Vec<Hitable> = Vec::new();
+
+    fn metal(color: (f32, f32, f32), fuzz: f32) -> Material {
+        Metal::new(Color::new(color), fuzz).into()
+    }
+
+    fn lambert(color: (f32, f32, f32)) -> Material {
+        Lambertian::new(Color::new(color)).into()
+    }
+
     world.push(
         StaticSphere::new(
             1000.,
-            (0., -1000., 0.).into(),
-            Lambertian::new((0.5, 0.5, 0.5).into()).into(),
+            (0., -1000., 0.),
+            Lambertian::new(CheckerBoard::new(
+                10.,
+                Color::new((0.8, 0.8, 0.8)),
+                Color::new((0.2, 0.3, 0.1)),
+            )),
         )
         .into(),
     );
 
     let mut rng = rand::thread_rng();
 
-    for a in -11..=10 {
-        for b in -11..=10 {
+    for a in -3..=3 {
+        for b in -3..=3 {
             let a = a as f32;
             let b = b as f32;
             let material_type: f32 = rng.gen();
@@ -34,26 +71,20 @@ fn random_scene() -> Hitable {
                 continue;
             }
             let material: Material = if material_type < 0.8 {
-                Lambertian::new(
-                    (
-                        rng.gen::<f32>() * rng.gen::<f32>(),
-                        rng.gen::<f32>() * rng.gen::<f32>(),
-                        rng.gen::<f32>() * rng.gen::<f32>(),
-                    )
-                        .into(),
-                )
-                .into()
+                lambert((
+                    rng.gen::<f32>() * rng.gen::<f32>(),
+                    rng.gen::<f32>() * rng.gen::<f32>(),
+                    rng.gen::<f32>() * rng.gen::<f32>(),
+                ))
             } else if material_type < 0.95 {
-                Metal::new(
+                metal(
                     (
                         0.5 * (1. + rng.gen::<f32>()),
                         0.5 * (1. + rng.gen::<f32>()),
                         0.5 * (1. + rng.gen::<f32>()),
-                    )
-                        .into(),
+                    ),
                     0.5 * rng.gen::<f32>(),
                 )
-                .into()
             } else {
                 Dialectric::new(1.5).into()
             };
@@ -74,27 +105,13 @@ fn random_scene() -> Hitable {
         }
     }
 
-    world.push(StaticSphere::new(1.0, (0., 1., 0.).into(), Dialectric::new(1.5).into()).into());
+    world.push(StaticSphere::new(1.0, (0., 1., 0.), Dialectric::new(1.5)).into());
 
-    world.push(
-        StaticSphere::new(
-            1.0,
-            (-4., 1., 0.).into(),
-            Lambertian::new((0.4, 0.2, 0.1).into()).into(),
-        )
-        .into(),
-    );
+    world.push(StaticSphere::new(1.0, (-4., 1., 0.), lambert((0.4, 0.2, 0.1))).into());
 
-    world.push(
-        StaticSphere::new(
-            1.0,
-            (4., 1., 0.).into(),
-            Metal::new((0.7, 0.6, 0.5).into(), 0.0).into(),
-        )
-        .into(),
-    );
+    world.push(StaticSphere::new(1.0, (4., 1., 0.), metal((0.7, 0.6, 0.5), 0.0)).into());
 
-    Hitable::List(world.into())
+    Hitable::BvhNode(BvhNode::new(world, (0.0, 1.0)))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -147,17 +164,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut scene: Scene =
         serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
     let num_pixels = scene.image.num_pixels();
-    scene.objects = random_scene();
+    scene.objects = two_perlin_spheres();
     //    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
 
-    let bar = ProgressBar::new(num_pixels as u64);
+    let progress_bar = ProgressBar::new(num_pixels as u64);
 
-    bar.set_style(ProgressStyle::default_bar().template(
+    progress_bar.set_style(ProgressStyle::default_bar().template(
         "[{elapsed_precise} elapsed] {wide_bar:.green/white} {percent}% [{eta} remaining]",
     ));
 
     let renderer = WorkstationRenderer {
-        progress_bar: &bar,
+        progress_bar: &progress_bar,
         scene: &scene,
     };
 

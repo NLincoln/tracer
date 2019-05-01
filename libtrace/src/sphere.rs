@@ -11,8 +11,8 @@ pub trait Sphere {
         let center = self.center(ray.time());
         let radius = self.radius();
 
-        let oc = *ray.origin() - center;
-        let a = ray.direction().clone().dot(ray.direction());
+        let oc = ray.origin() - center;
+        let a = ray.direction().dot(ray.direction());
         let b = oc.dot(ray.direction());
         let c = oc.squared_length() - radius * radius;
         let discriminant = b * b - a * c;
@@ -47,11 +47,15 @@ pub struct StaticSphere {
 }
 
 impl StaticSphere {
-    pub fn new(radius: f32, center: Vec3, material: Material) -> StaticSphere {
+    pub fn new<V: Into<Vec3>, M: Into<Material>>(
+        radius: f32,
+        center: V,
+        material: M,
+    ) -> StaticSphere {
         StaticSphere {
             radius,
-            center,
-            material,
+            center: center.into(),
+            material: material.into(),
         }
     }
     pub fn bounding_box(&self) -> Aabb {
