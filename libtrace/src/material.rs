@@ -62,7 +62,11 @@ impl Lambertian {
         let target = hit_record.normal + Vec3::random_in_unit_circle();
         let scattered = Ray::new(hit_record.pointing_at, target, ray.time());
         Some(Scatter {
-            attenuation: self.albedo.value(0., 0., hit_record.pointing_at),
+            attenuation: self.albedo.value(
+                hit_record.uv.0,
+                hit_record.uv.1,
+                hit_record.pointing_at,
+            ),
             scatter: scattered,
         })
     }
@@ -90,7 +94,11 @@ impl Metal {
                 reflected + Vec3::random_in_unit_circle() * self.fuzz,
                 ray.time(),
             ),
-            attenuation: self.albedo.value(0., 0., hit_record.pointing_at),
+            attenuation: self.albedo.value(
+                hit_record.uv.0,
+                hit_record.uv.1,
+                hit_record.pointing_at,
+            ),
         })
     }
 }

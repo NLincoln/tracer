@@ -6,7 +6,7 @@ use libtrace::{
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
-use libtrace::texture::{CheckerBoard, NoiseTexture, Texture};
+use libtrace::texture::{CheckerBoard, Image, NoiseTexture, Texture};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
@@ -22,6 +22,11 @@ fn two_spheres() -> Hitable {
         StaticSphere::new(2.5, (0., 2.5, 0.), Lambertian::new(checker.clone())).into(),
     ];
     Hitable::List(world.into())
+}
+
+fn earth_sphere() -> Hitable {
+    let text: Texture = Image::new(image::open("earth.jpg").unwrap()).into();
+    StaticSphere::new(10., (0., 0., 0.), Lambertian::new(text)).into()
 }
 
 fn two_perlin_spheres() -> Hitable {
@@ -151,7 +156,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let camera = self.camera(&scene);
 
             self.get_pixels_to_render(&scene)
-                .into_par_iter()
+                .into_iter()
                 .map(|(i, j)| self.render_pixel(&camera, (i, j), &scene))
                 .collect()
         }
@@ -164,7 +169,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut scene: Scene =
         serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
     let num_pixels = scene.image.num_pixels();
-    scene.objects = two_perlin_spheres();
+    scene.objects = earth_sphere();
     //    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
 
     let progress_bar = ProgressBar::new(num_pixels as u64);

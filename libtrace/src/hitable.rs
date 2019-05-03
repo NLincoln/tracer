@@ -8,6 +8,7 @@ pub struct HitRecord {
     pub t: f32,
     pub pointing_at: Vec3,
     pub normal: Vec3,
+    pub uv: (f32, f32),
     pub material: Material,
 }
 

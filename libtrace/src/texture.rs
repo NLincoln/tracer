@@ -1,6 +1,8 @@
 pub use crate::perlin::NoiseTexture;
 use crate::Vec3;
+use image::{DynamicImage, GenericImageView};
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::{self, Debug};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
@@ -9,6 +11,7 @@ pub enum Texture {
     CheckerBoard(Box<CheckerBoard>),
     RecursiveCheckerboard(Box<RecursiveCheckerboard>),
     Noise(NoiseTexture),
+    Image(Image),
 }
 
 impl Texture {
@@ -18,6 +21,7 @@ impl Texture {
             Texture::CheckerBoard(checker) => checker.value(u, v, p),
             Texture::RecursiveCheckerboard(checker) => checker.value(u, v, p),
             Texture::Noise(noise) => noise.value(u, v, p),
+            Texture::Image(image) => image.value(u, v, p),
         }
     }
 }
@@ -44,6 +48,13 @@ impl From<NoiseTexture> for Texture {
         Texture::Noise(color)
     }
 }
+
+impl From<Image> for Texture {
+    fn from(color: Image) -> Texture {
+        Texture::Image(color)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CheckerBoard {
     odd: Texture,
@@ -118,5 +129,60 @@ impl Color {
         Color {
             color: color.into(),
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct Image {
+    image: DynamicImage,
+}
+
+impl Debug for Image {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Image({}x{})", self.image.width(), self.image.height())
+    }
+}
+
+impl serde::Serialize for Image {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        unimplemented!()
+    }
+}
+impl<'de> serde::Deserialize<'de> for Image {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        unimplemented!()
+    }
+}
+pub fn clamp<T: PartialOrd>(input: T, min: T, max: T) -> T {
+    debug_assert!(min <= max, "min must be less than or equal to max");
+    if input < min {
+        min
+    } else if input > max {
+        max
+    } else {
+        input
+    }
+}
+impl Image {
+    pub fn new(image: DynamicImage) -> Image {
+        Image { image }
+    }
+
+    fn value(&self, u: f32, v: f32, p: Vec3) -> Vec3 {
+        let i = u * self.image.width() as f32;
+        let j = (1. - v) * self.image.height() as f32 - 0.001;
+        let i = clamp(i, 0., self.image.width() as f32);
+        let j = clamp(j, 0., self.image.height() as f32);
+
+        let rgb = self.image.get_pixel(i as u32, j as u32);
+
+        let [r, g, b, _] = rgb.data;
+        Vec3::new(r as f32, g as f32, b as f32).apply(|v| v / 255.0)
     }
 }

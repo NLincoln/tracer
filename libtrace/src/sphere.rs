@@ -2,6 +2,16 @@ use crate::aabb::Aabb;
 use crate::{HitRecord, Material, Ray, Vec3};
 use serde_derive::{Deserialize, Serialize};
 
+fn get_sphere_uv(p: Vec3) -> (f32, f32) {
+    use std::f32::consts::{FRAC_PI_2, PI};
+
+    let phi = p.z().atan2(p.x());
+    let theta = p.y().asin();
+    let u = 1. - (phi + PI) / (2. * PI);
+    let v = (theta + FRAC_PI_2) / PI;
+    (u, v)
+}
+
 pub trait Sphere {
     fn center(&self, time: f32) -> Vec3;
     fn radius(&self) -> f32;
@@ -27,13 +37,13 @@ pub trait Sphere {
             }
             let pointing_at = ray.point_at(temp);
             let normal = (pointing_at - center).scalar_div(radius);
-            let result = Some(HitRecord {
+            return Some(HitRecord {
                 t: temp,
                 pointing_at,
                 normal,
+                uv: get_sphere_uv((pointing_at - center) / radius),
                 material: self.material(),
             });
-            return result;
         }
         None
     }

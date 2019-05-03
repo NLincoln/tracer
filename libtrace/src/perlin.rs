@@ -116,6 +116,6 @@ impl NoiseTexture {
     }
 
     pub(crate) fn value(&self, _u: f32, _v: f32, p: Vec3) -> Vec3 {
-        (0.5 * (1. + (self.scale * p.z() + 10. * turbulence(p, 10)).sin())).into()
+        (0.5 * (1. + (self.scale * p.z() + 10. * turbulence(p, 4)).sin())).into()
     }
 }
