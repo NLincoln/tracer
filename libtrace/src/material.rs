@@ -13,6 +13,7 @@ pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),
     Dialectric(Dialectric),
+    Diffuse(Diffuse),
 }
 
 impl Material {
@@ -22,6 +23,14 @@ impl Material {
             Material::Lambertian(l) => l.scatter(ray, hit_record),
             Material::Metal(m) => m.scatter(ray, hit_record),
             Material::Dialectric(d) => d.scatter(ray, hit_record),
+            Material::Diffuse(diff) => diff.scatter(ray, hit_record),
+        }
+    }
+
+    pub fn emitted(&self, uv: (f32, f32), p: Vec3) -> Vec3 {
+        match self {
+            Material::Diffuse(d) => d.emitted(uv, p),
+            Material::Lambertian(_) | Material::Metal(_) | Material::Dialectric(_) => 0f32.into(),
         }
     }
 }
@@ -43,6 +52,12 @@ impl From<Dialectric> for Material {
     #[inline]
     fn from(d: Dialectric) -> Material {
         Material::Dialectric(d)
+    }
+}
+
+impl From<Diffuse> for Material {
+    fn from(d: Diffuse) -> Material {
+        Material::Diffuse(d)
     }
 }
 
@@ -151,6 +166,24 @@ impl Dialectric {
         })
     }
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Diffuse {
+    emit: Texture,
+}
+
+impl Diffuse {
+    pub fn new<T: Into<Texture>>(emit: T) -> Diffuse {
+        Diffuse { emit: emit.into() }
+    }
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
+        None
+    }
+    fn emitted(&self, (u, v): (f32, f32), p: Vec3) -> Vec3 {
+        self.emit.value(u, v, p)
+    }
+}
+
 #[inline]
 fn schlick(cosine: f32, ref_idx: f32) -> f32 {
     let mut r0 = (1. - ref_idx) / (1. + ref_idx);

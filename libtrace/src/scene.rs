@@ -5,8 +5,6 @@ use serde_derive::{Deserialize, Serialize};
 pub struct Scene {
     pub image: Image,
     pub camera: Camera,
-    pub sky_color: Vec3,
-    pub objects: Hitable,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

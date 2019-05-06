@@ -1,4 +1,4 @@
-use crate::{scene::Scene, Camera, Vec3};
+use crate::{scene::Scene, Camera, Hitable, Vec3};
 use rand::prelude::*;
 use std::error::Error;
 use std::io::{BufWriter, Write};
@@ -8,6 +8,8 @@ use std::io::{BufWriter, Write};
 /// you are free to customize those methods as well.
 pub trait Renderer {
     fn scene(&self) -> &Scene;
+    fn objects(&self) -> &Hitable;
+
     #[inline]
     fn camera(&self, scene: &Scene) -> Camera {
         let width = scene.image.width;
@@ -105,7 +107,7 @@ pub trait Renderer {
             let u = (i + rng.gen::<f32>()) / width;
             let v = (j + rng.gen::<f32>()) / height;
             let r = camera.get_ray(u, v);
-            samples.push(crate::color(&scene.sky_color, &r, &scene.objects, 0));
+            samples.push(crate::color(&r, self.objects(), 0));
         }
         let col: Vec3 = samples.into_iter().sum();
         let color = col / num_samples as f32;

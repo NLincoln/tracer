@@ -1,12 +1,13 @@
 use std::f32;
 
 use libtrace::{
-    material::{Dialectric, Lambertian, Material, Metal},
+    material::{Dialectric, Diffuse, Lambertian, Material, Metal},
     texture, BvhNode, Hitable, MovingSphere, StaticSphere, Vec3,
 };
 
+use image::flat::NormalForm::ColumnMajorPacked;
 use indicatif::{ProgressBar, ProgressStyle};
-use libtrace::texture::{CheckerBoard, Image, NoiseTexture, Texture};
+use libtrace::texture::{CheckerBoard, Color, Image, NoiseTexture, Texture};
 use rand::prelude::*;
 use rayon::prelude::*;
 use std::error::Error;
@@ -29,12 +30,53 @@ fn earth_sphere() -> Hitable {
     StaticSphere::new(10., (0., 0., 0.), Lambertian::new(text)).into()
 }
 
+fn simple_light() -> Hitable {
+    use libtrace::rect::XYRect;
+    let text: Texture = NoiseTexture::new(4.).into();
+    let world: Vec<Hitable> = vec![
+        StaticSphere::new(1000., (0., -1000., 0.), Lambertian::new(text.clone())).into(),
+        StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text.clone())).into(),
+        XYRect::new(
+            3.,
+            5.,
+            1.,
+            3.,
+            -2.,
+            Diffuse::new(CheckerBoard::new(
+                8.,
+                Color::new(4.),
+                Color::new(Vec3::new(1.0, 0.4, 0.6) * 4.),
+            )),
+        )
+        .into(),
+    ];
+    Hitable::List(world.into())
+}
+
 fn two_perlin_spheres() -> Hitable {
     let text: Texture = NoiseTexture::new(4.).into();
     //    let text: Texture = Color::new(0.).into();
     let world: Vec<Hitable> = vec![
         StaticSphere::new(1000., (0., -1000., 0.), Lambertian::new(text.clone())).into(),
         StaticSphere::new(2., (0., 2., 0.), Lambertian::new(text)).into(),
+    ];
+    Hitable::List(world.into())
+}
+
+fn cornell_box() -> Hitable {
+    use libtrace::rect::{XYRect, XZRect, YZRect};
+    use libtrace::NormalFlipper;
+    let red: Material = Lambertian::new(Color::new((0.65, 0.05, 0.05))).into();
+    let white: Material = Lambertian::new(Color::new(0.73)).into();
+    let green: Material = Lambertian::new(Color::new((0.12, 0.45, 0.15))).into();
+    let light: Material = Diffuse::new(Color::new(15.)).into();
+    let world: Vec<Hitable> = vec![
+        NormalFlipper::new(YZRect::new(0., 555., 0., 555., 555., green)).into(), // left
+        YZRect::new(0., 555., 0., 555., 0., red).into(),                         // right
+        NormalFlipper::new(XZRect::new(213., 343., 227., 332., 554., light)).into(), // light
+        XZRect::new(0., 555., 0., 555., 0., white.clone()).into(),               // floor
+        NormalFlipper::new(XZRect::new(0., 555., 0., 555., 555., white.clone())).into(), // ceiling,
+        NormalFlipper::new(XYRect::new(0., 555., 0., 555., 555., white.clone())).into(),
     ];
     Hitable::List(world.into())
 }
@@ -142,6 +184,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     use libtrace::{renderer::Renderer, scene::Scene};
 
     struct WorkstationRenderer<'a> {
+        objects: &'a Hitable,
         scene: &'a Scene,
         progress_bar: &'a ProgressBar,
     }
@@ -151,12 +194,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         fn scene(&self) -> &Scene {
             self.scene
         }
+
+        fn objects(&self) -> &Hitable {
+            self.objects
+        }
+
         fn render(&self) -> Vec<(u8, u8, u8)> {
             let scene = self.scene();
             let camera = self.camera(&scene);
 
             self.get_pixels_to_render(&scene)
-                .into_iter()
+                .into_par_iter()
                 .map(|(i, j)| self.render_pixel(&camera, (i, j), &scene))
                 .collect()
         }
@@ -169,9 +217,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut scene: Scene =
         serde_yaml::from_reader(fs::File::open(matches.value_of("input").unwrap())?)?;
     let num_pixels = scene.image.num_pixels();
-    scene.objects = earth_sphere();
-    //    serde_yaml::to_writer(fs::File::create("scene.yml").unwrap(), &scene).unwrap();
-
     let progress_bar = ProgressBar::new(num_pixels as u64);
 
     progress_bar.set_style(ProgressStyle::default_bar().template(
@@ -181,6 +226,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let renderer = WorkstationRenderer {
         progress_bar: &progress_bar,
         scene: &scene,
+        objects: &cornell_box(),
     };
 
     let pixels = renderer.render();

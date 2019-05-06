@@ -4,6 +4,7 @@ use lambda_runtime::{error::HandlerError, Context};
 use libtrace::{
     renderer::Renderer,
     scene::{Rendered, Scene},
+    Hitable,
 };
 
 fn main() {
@@ -27,6 +28,9 @@ fn handler(request: Request, _: Context) -> Result<impl IntoResponse, HandlerErr
     }
 
     impl<'a> Renderer for WorkerRenderer<'a> {
+        fn objects(&self) -> &Hitable {
+            unimplemented!()
+        }
         fn scene(&self) -> &Scene {
             self.scene
         }

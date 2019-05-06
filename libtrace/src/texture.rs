@@ -71,7 +71,8 @@ impl CheckerBoard {
         }
     }
     pub fn value(&self, u: f32, v: f32, p: Vec3) -> Vec3 {
-        let is_odd = (self.scale * p.x()).sin().powi(2) * (self.scale * p.z()).sin();
+        let (x, y, z) = p.apply(|v| self.scale * v).apply(|v| v.sin()).to_tuple();
+        let is_odd = x * y * z;
         if is_odd < 0. {
             self.odd.value(u, v, p)
         } else {
